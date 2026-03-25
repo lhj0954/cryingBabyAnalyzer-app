@@ -1,58 +1,198 @@
 package com.example.cryingbabyanalyzerapp;
 
-import android.app.Activity;
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
-public class MainActivity extends Activity {
+import java.io.File;
+import java.util.Locale;
+import java.util.concurrent.Executors;
 
-    Button btnHealthCheck;
-    TextView txtResult;
+public class MainActivity extends AppCompatActivity {
+
+    private static final int REQ_RECORD_AUDIO = 1001;
+
+    private Button btnDetect;
+    private TextView txtStatus;
+    private TextView txtResult;
+
+    private YamnetMonitor yamnetMonitor;
+    private CryApiService apiService;
+
+    private boolean detectMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btnHealthCheck = findViewById(R.id.btnHealthCheck);
+        btnDetect = findViewById(R.id.btnDetect);
+        txtStatus = findViewById(R.id.txtStatus);
         txtResult = findViewById(R.id.txtResult);
 
-        btnHealthCheck.setOnClickListener(v -> {
-            txtResult.setText("요청 보내는 중...");
+        apiService = new CryApiService("http://10.0.2.2:8000");
 
-            new Thread(() -> {
-                try {
-                    URL url = new URL("http://10.0.2.2:8000/health");
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setRequestMethod("GET");
-                    conn.setConnectTimeout(5000);
-                    conn.setReadTimeout(5000);
-
-                    BufferedReader reader = new BufferedReader(
-                            new InputStreamReader(conn.getInputStream())
-                    );
-
-                    StringBuilder result = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        result.append(line);
+        yamnetMonitor = new YamnetMonitor(this, new YamnetMonitor.Listener() {
+            @Override
+            public void onStatus(final String message) {
+                txtStatus.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        txtStatus.setText(message);
                     }
+                });
+            }
 
-                    reader.close();
-                    conn.disconnect();
+            @Override
+            public void onCryDetected() {
+                txtStatus.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        txtStatus.setText("울음 후보 감지됨. 5초 녹음 후 서버 분석 중...");
+                        txtResult.setText("");
+                    }
+                });
+                requestPrediction();
+            }
 
-                    runOnUiThread(() -> txtResult.setText(result.toString()));
-
-                } catch (Exception e) {
-                    runOnUiThread(() -> txtResult.setText("오류: " + e.getMessage()));
-                }
-            }).start();
+            @Override
+            public void onError(final String message) {
+                txtStatus.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        txtStatus.setText(message);
+                    }
+                });
+            }
         });
+
+        btnDetect.setOnClickListener(v -> {
+            if (!hasAudioPermission()) {
+                requestAudioPermission();
+                return;
+            }
+
+            if (detectMode) {
+                stopDetectMode();
+            } else {
+                startDetectMode();
+            }
+        });
+    }
+
+    private void startDetectMode() {
+        detectMode = true;
+        btnDetect.setText("감지 중지");
+        txtStatus.setText("감지 모드 ON");
+        yamnetMonitor.start();
+    }
+
+    private void stopDetectMode() {
+        detectMode = false;
+        btnDetect.setText("감지 시작");
+        txtStatus.setText("감지 모드 OFF");
+        yamnetMonitor.stop();
+    }
+
+    private void requestPrediction() {
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    File wavFile = WavRecorder.recordFiveSeconds(MainActivity.this);
+
+                    apiService.predict(wavFile, new CryApiService.PredictCallback() {
+                        @Override
+                        public void onSuccess(final CryApiService.PredictResponse response) {
+                            txtStatus.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    txtStatus.setText("서버 분석 완료");
+                                    txtResult.setText(
+                                            response.message + "\n" +
+                                                    "label = " + response.label + "\n" +
+                                                    "confidence = " + String.format(Locale.US, "%.3f", response.confidence)
+                                    );
+
+                                    if (detectMode) {
+                                        yamnetMonitor.start();
+                                    }
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onFailure(final String message) {
+                            txtStatus.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    txtStatus.setText(message);
+                                    if (detectMode) {
+                                        yamnetMonitor.start();
+                                    }
+                                }
+                            });
+                        }
+                    });
+
+                } catch (final Exception e) {
+                    txtStatus.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            txtStatus.setText("녹음 실패: " + e.getMessage());
+                            if (detectMode) {
+                                yamnetMonitor.start();
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private boolean hasAudioPermission() {
+        return ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestAudioPermission() {
+        ActivityCompat.requestPermissions(
+                this,
+                new String[]{Manifest.permission.RECORD_AUDIO},
+                REQ_RECORD_AUDIO
+        );
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == REQ_RECORD_AUDIO) {
+            if (grantResults.length > 0 &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startDetectMode();
+            } else {
+                txtStatus.setText("마이크 권한이 필요합니다.");
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (yamnetMonitor != null) {
+            yamnetMonitor.stop();
+        }
     }
 }
