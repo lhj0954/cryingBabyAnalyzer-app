@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
         txtStatus = findViewById(R.id.txtStatus);
         txtResult = findViewById(R.id.txtResult);
 
-        apiService = new CryApiService("http://10.0.2.2:8000");
+        apiService = new CryApiService("http://127.0.0.1:8000");
 
         yamnetMonitor = new YamnetMonitor(this, new YamnetMonitor.Listener() {
             @Override
@@ -115,10 +115,18 @@ public class MainActivity extends AppCompatActivity {
                                 @Override
                                 public void run() {
                                     txtStatus.setText("서버 분석 완료");
+                                    String label = "없음";
+                                    float confidence = 0f;
+
+                                    if (response != null && response.prediction != null) {
+                                        label = response.prediction.label;
+                                        confidence = response.prediction.confidence;
+                                    }
+
                                     txtResult.setText(
                                             response.message + "\n" +
-                                                    "label = " + response.label + "\n" +
-                                                    "confidence = " + String.format(Locale.US, "%.3f", response.confidence)
+                                                    "label = " + label + "\n" +
+                                                    "confidence = " + String.format(Locale.US, "%.3f", confidence)
                                     );
 
                                     if (detectMode) {

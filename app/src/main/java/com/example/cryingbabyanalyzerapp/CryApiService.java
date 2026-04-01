@@ -27,11 +27,32 @@ public class CryApiService {
     }
 
     public static class PredictResponse {
-        public boolean ok;
+        public String filename;
+        public int sample_rate;
+        public float duration_sec;
+        public boolean triggered;
+        public Float trigger_time_sec;
+        public AnalysisWindow analysis_window;
+        public Prediction prediction;
+        public String message;
+    }
+
+    public static class AnalysisWindow {
+        public float start_sec;
+        public float end_sec;
+        public float duration_sec;
+    }
+
+    public static class Prediction {
         public String label;
         public float confidence;
-        public String message;
-        public Map<String, Float> scores;
+        public Yamnet yamnet;
+    }
+
+    public static class Yamnet {
+        public float baby_cry_max;
+        public float crying_max;
+        public float merged_cry_max;
     }
 
     private final OkHttpClient client = new OkHttpClient();
