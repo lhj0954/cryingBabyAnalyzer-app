@@ -1,6 +1,18 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
 }
+
+// local.properties 읽기
+val properties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { properties.load(it) }
+}
+
+// 못 찾을 경우 기본값
+val serverIp = properties.getProperty("SERVER_IP") ?: "\"http://112.72.181.159:8000\""
 
 android {
     namespace = "com.example.cryingbabyanalyzerapp"
@@ -14,6 +26,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // BuildConfig.SERVER_IP 생성
+        buildConfigField("String", "SERVER_IP", serverIp)
+    }
+
+    // BuildConfig 생성 기능 활성화
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {

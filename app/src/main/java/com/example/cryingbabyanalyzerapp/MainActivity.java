@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
         txtStatus = findViewById(R.id.txtStatus);
         txtResult = findViewById(R.id.txtResult);
 
-        apiService = new CryApiService("http://127.0.0.1:8000");
+        apiService = new CryApiService(BuildConfig.SERVER_IP);
 
         yamnetMonitor = new YamnetMonitor(this, new YamnetMonitor.Listener() {
             @Override
