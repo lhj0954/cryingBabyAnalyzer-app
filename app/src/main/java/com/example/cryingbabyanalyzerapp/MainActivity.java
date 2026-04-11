@@ -15,7 +15,6 @@ import java.io.File;
 import java.util.Locale;
 import java.util.concurrent.Executors;
 
-
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQ_RECORD_AUDIO = 1001;
@@ -125,7 +124,6 @@ public class MainActivity extends AppCompatActivity {
                                         confidence = response.prediction.confidence;
                                     }
 
-                                    System.out.println(label);
                                     txtResult.setText(
                                             response.message + "\n" +
                                                     "label = " + label + "\n" +
@@ -145,7 +143,6 @@ public class MainActivity extends AppCompatActivity {
                                 @Override
                                 public void run() {
                                     txtStatus.setText(message);
-
                                     if (detectMode) {
                                         yamnetMonitor.start();
                                     }
