@@ -11,7 +11,7 @@ if (localPropertiesFile.exists()) {
     properties.load(localPropertiesFile.inputStream())
 }
 // 못 찾을 경우 사용할 기본 IP (본인 컴퓨터 IP로 수정하세요)
-val serverIp = properties.getProperty("SERVER_IP") ?: "\"http://192.168.1.102:8000\""
+val serverIp = properties.getProperty("SERVER_IP")
 
 android {
     namespace = "com.example.cryingbabyanalyzerapp"
