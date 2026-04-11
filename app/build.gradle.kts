@@ -1,6 +1,17 @@
+//추가
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
 }
+// 추가
+val properties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    properties.load(localPropertiesFile.inputStream())
+}
+// 못 찾을 경우 사용할 기본 IP (본인 컴퓨터 IP로 수정하세요)
+val serverIp = properties.getProperty("SERVER_IP") ?: "\"http://192.168.1.102:8000\""
 
 android {
     namespace = "com.example.cryingbabyanalyzerapp"
@@ -14,6 +25,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // ✅ [추가 1] local.properties에서 읽어온 serverIp를 BuildConfig에 연결
+        buildConfigField("String", "SERVER_IP", serverIp)
+    }
+
+    // ✅ [추가 2] BuildConfig 클래스를 자동으로 생성하도록 기능을 켭니다.
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {

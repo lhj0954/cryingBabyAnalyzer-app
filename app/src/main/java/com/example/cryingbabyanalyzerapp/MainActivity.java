@@ -15,6 +15,7 @@ import java.io.File;
 import java.util.Locale;
 import java.util.concurrent.Executors;
 
+
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQ_RECORD_AUDIO = 1001;
@@ -37,7 +38,8 @@ public class MainActivity extends AppCompatActivity {
         txtStatus = findViewById(R.id.txtStatus);
         txtResult = findViewById(R.id.txtResult);
 
-        apiService = new CryApiService("http://127.0.0.1:8000");
+        //추가
+        apiService = new CryApiService(BuildConfig.SERVER_IP);
 
         yamnetMonitor = new YamnetMonitor(this, new YamnetMonitor.Listener() {
             @Override
@@ -123,6 +125,7 @@ public class MainActivity extends AppCompatActivity {
                                         confidence = response.prediction.confidence;
                                     }
 
+                                    System.out.println(label);
                                     txtResult.setText(
                                             response.message + "\n" +
                                                     "label = " + label + "\n" +
@@ -142,6 +145,7 @@ public class MainActivity extends AppCompatActivity {
                                 @Override
                                 public void run() {
                                     txtStatus.setText(message);
+
                                     if (detectMode) {
                                         yamnetMonitor.start();
                                     }
