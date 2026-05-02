@@ -26,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQ_RECORD_AUDIO = 1001;
 
     private Button btnDetect;
+    private Button btnFeedback;
     private TextView txtStatus;
     private TextView txtResult;
     private Switch switchBackground;
@@ -46,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
         if (!CryDetectionService.lastResultText.isEmpty()) {
             txtResult.setText(CryDetectionService.lastResultText);
 
+            btnFeedback.setVisibility(android.view.View.VISIBLE);
+
             // 만약 수동 감지 모드가 아니라면 상태도 업데이트
             if (switchBackground.isChecked()) {
                 txtStatus.setText("백그라운드에서 감지됨!");
@@ -59,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         btnDetect = findViewById(R.id.btnDetect);
+        btnFeedback = findViewById(R.id.btnFeedback);
         txtStatus = findViewById(R.id.txtStatus);
         txtResult = findViewById(R.id.txtResult);
 
@@ -120,6 +124,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // 버튼 눌렀을 때 피드백 화면으로 넘어가는 코드
+        btnFeedback.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, FeedbackActivity.class);
+            intent.putExtra("RESULT_TEXT", txtResult.getText().toString()); // 화면에 떠있는 결과 텍스트 넘기기
+            startActivity(intent);
+        });
+
         switchBackground.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (!hasRequiredPermissions()) { // ⭐ 여기를 수정
                 requestAudioPermission();
@@ -177,6 +188,7 @@ public class MainActivity extends AppCompatActivity {
                                                     "confidence = " + String.format(Locale.US, "%.3f", confidence)
                                     );
 
+                                    btnFeedback.setVisibility(android.view.View.VISIBLE);
                                     notificationManager.sendCryNotification(label, confidence);
 
                                     if (detectMode) {

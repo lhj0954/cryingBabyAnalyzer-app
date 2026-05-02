@@ -103,6 +103,24 @@
                 android:textColor="#2C3E50"
                 android:textSize="20sp"
                 android:textStyle="bold" />
+
+            <!-- (기존) txtResult 텍스트뷰 아래에 추가 -->
+            <!-- (수정된) 눈에 띄는 피드백 버튼 -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFeedback"
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:layout_marginTop="20dp"
+                android:backgroundTint="#FF9800"
+                android:text="분석 결과 피드백 남기기"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="25dp"
+                app:icon="@android:drawable/ic_menu_edit"
+                app:iconTint="#FFFFFF"
+                android:visibility="gone" />
+            <!-- 처음엔 안 보이다가 결과가 나오면 보이게(gone) 설정 -->
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F7F9FC"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="분석 결과 피드백"
+            android:textColor="#000000"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <!-- 상단: 분석 결과 요약 -->
+        <TextView
+            android:id="@+id/tvFeedbackResult"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:background="#E8F0FE"
+            android:padding="16dp"
+            android:text="분석 결과: 대기 중"
+            android:textColor="#1565C0"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- 1번 질문 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1. 분석 결과가 맞나요?"
+            android:textColor="#000000"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rgCorrect"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:orientation="horizontal">
+
+            <!-- 글씨 크기 키우고 진한 검은색 적용 -->
+            <RadioButton
+                android:id="@+id/rbYes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#000000"
+                android:textSize="16sp"
+                android:text="네, 맞아요" />
+
+            <RadioButton
+                android:id="@+id/rbNo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:textColor="#000000"
+                android:textSize="16sp"
+                android:text="아니요, 틀렸어요" />
+        </RadioGroup>
+
+        <!-- 2번 질문 (6개 클래스) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2. 결과가 틀렸다면, 아기가 왜 울었나요?"
+            android:textColor="#000000"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rgReason"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="24dp">
+
+            <!-- 여기도 모두 검은색 텍스트 강제 적용 -->
+            <RadioButton android:id="@+id/rbAwake" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#000000" android:textSize="16sp" android:text="잠에서 깸" />
+            <RadioButton android:id="@+id/rbDiaper" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#000000" android:textSize="16sp" android:text="기저귀" />
+            <RadioButton android:id="@+id/rbFuss" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#000000" android:textSize="16sp" android:text="칭얼거림(hug)" />
+            <RadioButton android:id="@+id/rbHungry" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#000000" android:textSize="16sp" android:text="배고픔" />
+            <RadioButton android:id="@+id/rbSleepy" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#000000" android:textSize="16sp" android:text="졸림" />
+            <RadioButton android:id="@+id/rbUncomfortable" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#000000" android:textSize="16sp" android:text="불편함" />
+        </RadioGroup>
+
+        <!-- 3번 질문 (대처 방법 텍스트 입력) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3. 대처방법 (선택사항)"
+            android:textColor="#000000"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- 힌트는 진한 회색, 입력되는 글씨는 검은색으로 변경 -->
+        <EditText
+            android:id="@+id/etAction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="32dp"
+            android:background="@android:drawable/edit_text"
+            android:gravity="top|start"
+            android:hint="예) 우유를 100ml 먹였더니 잠잠해짐"
+            android:textColorHint="#757575"
+            android:textColor="#000000"
+            android:inputType="textMultiLine"
+            android:minLines="3"
+            android:padding="12dp" />
+
+        <!-- 제출 버튼 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSubmit"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:backgroundTint="#4A90E2"
+            android:text="피드백 제출하기"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:cornerRadius="12dp" />
+    </LinearLayout>
+</ScrollView>
