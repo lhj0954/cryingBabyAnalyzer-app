@@ -9,6 +9,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
     <application
         android:allowBackup="true"
         android:usesCleartextTraffic="true"
@@ -20,10 +21,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CryingBabyAnalyzerApp"
         tools:targetApi="31">
+
         <service
             android:name=".CryDetectionService"
             android:foregroundServiceType="microphone"
             android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -32,7 +35,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 여기 중요 -->
+        <activity android:name=".AlertActivity" />
         <activity android:name=".FeedbackActivity" />
+
     </application>
 
 </manifest>
