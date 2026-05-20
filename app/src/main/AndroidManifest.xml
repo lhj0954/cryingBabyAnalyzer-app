@@ -39,6 +39,7 @@
         <!-- 여기 중요 -->
         <activity android:name=".AlertActivity" />
         <activity android:name=".FeedbackActivity" />
+        <activity android:name=".MedicalRecordActivity" />
 
     </application>
 
