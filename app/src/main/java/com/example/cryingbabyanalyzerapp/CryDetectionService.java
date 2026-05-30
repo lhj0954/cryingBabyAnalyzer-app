@@ -22,14 +22,16 @@ public class CryDetectionService extends Service {
 
     public static boolean isRunning = false;
 
+    // 💡 [핵심 추가] 중복 API 호출 및 녹음을 막기 위한 플래그 변수
+    private boolean isProcessing = false;
+
     @Override
     public void onCreate() {
         super.onCreate();
-        // 초기화
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         if (pm != null) {
             wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "CryAnalyzer::BackgroundCpuLock");
-            wakeLock.acquire(); // 잠들기 방지 시작!
+            wakeLock.acquire();
         }
 
         apiService = new CryApiService(BuildConfig.SERVER_IP);
@@ -46,7 +48,8 @@ public class CryDetectionService extends Service {
 
             @Override
             public void onCryDetected() {
-                // 백그라운드에서 감지 시 서버 분석 시작
+                // 💡 [추가] 이미 서버 분석 프로세스가 진행 중이라면 새로운 감지 신호는 무시합니다.
+                if (isProcessing) return;
                 requestPrediction();
             }
 
@@ -57,10 +60,9 @@ public class CryDetectionService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // 1. 시스템에게 서비스 시작을 알리는 상시 알림 띄우기 (포그라운드 서비스 필수 조건)
         Notification notification = new NotificationCompat.Builder(this, "BabyCryAlertChannel")
-                .setContentTitle("아기 울음 감지 중")
-                .setContentText("백그라운드에서 소리를 감지하고 있습니다.")
+                .setContentTitle("아기 상태 감시 중")
+                .setContentText("백그라운드에서 소리를 상시 감지하고 있습니다.")
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setOngoing(true)
                 .setForegroundServiceBehavior(androidx.core.app.NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
@@ -68,48 +70,65 @@ public class CryDetectionService extends Service {
 
         startForeground(ONGOING_NOTIFICATION_ID, notification);
 
-        // 2. 감지 시작
         if (yamnetMonitor != null) yamnetMonitor.start();
 
-        return START_STICKY; // 서비스가 강제 종료되어도 시스템이 다시 살려줌
+        return START_STICKY;
     }
 
     private void requestPrediction() {
+        // 💡 [추가] 메서드 진입 시 중복 진입 방지용 더블 체크 잠금
+        if (isProcessing) return;
+        isProcessing = true;
+
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 File wavFile = WavRecorder.recordFiveSeconds(this);
                 apiService.predict(wavFile, new CryApiService.PredictCallback() {
                     @Override
                     public void onSuccess(CryApiService.PredictResponse response) {
-                        // ⭐ 1. 화면에 표시할 예쁜 텍스트 만들기
-                        String resultStr = response.message + "\n" +
-                                "label = " + response.prediction.label + "\n" +
-                                "confidence = " + String.format(java.util.Locale.US, "%.3f", response.prediction.confidence);
+                        String label = "없음";
+                        float confidence = 0f;
 
-                        // ⭐ 2. 변수에 기억해두기 (알림을 누르고 앱에 들어올 때를 대비)
-                        lastResultText = resultStr;
+                        if (response != null && response.prediction != null) {
+                            label = response.prediction.label;
+                            confidence = response.prediction.confidence;
+                        }
 
-                        // ⭐ 3. MainActivity로 결과가 나왔다고 방송(Broadcast) 쏘기
+                        // 1. 메인 화면의 한글 변환 가이드와 정상 연동되도록 깔끔한 영어 라벨만 변수에 기억
+                        lastResultText = label;
+
+                        // 2. MainActivity로 결과 브로드캐스트 전송 (실시간 화면 갱신)
                         Intent broadcastIntent = new Intent("com.example.cryingbabyanalyzerapp.RESULT_UPDATE");
+                        broadcastIntent.setPackage(getPackageName());
                         sendBroadcast(broadcastIntent);
 
                         if (response != null && response.prediction != null) {
-                            // 실제 알림 발송 (폰 상단에 팝업 뜸)
-                            notificationManager.sendCryNotification(
-                                    response.prediction.label,
-                                    response.prediction.confidence
-                            );
+                            // 3. 실제 알림 발송 (폰 상단 팝업)
+                            notificationManager.sendCryNotification(label, confidence);
                         }
-                        yamnetMonitor.start(); // 다음 감지를 위해 재시작
+
+                        // 💡 [핵심 변경] 모든 처리가 완전히 끝난 후 플래그를 풀고 YAMNet을 재시작합니다.
+                        isProcessing = false;
+                        if (isRunning && yamnetMonitor != null) {
+                            yamnetMonitor.start();
+                        }
                     }
 
                     @Override
                     public void onFailure(String message) {
-                        yamnetMonitor.start();
+                        // 💡 실패 시에도 안전하게 플래그를 해제하고 재가동합니다.
+                        isProcessing = false;
+                        if (isRunning && yamnetMonitor != null) {
+                            yamnetMonitor.start();
+                        }
                     }
                 });
             } catch (Exception e) {
-                yamnetMonitor.start();
+                // 💡 예외 발생 시에도 안전하게 플래그를 해제하고 재가동합니다.
+                isProcessing = false;
+                if (isRunning && yamnetMonitor != null) {
+                    yamnetMonitor.start();
+                }
             }
         });
     }
@@ -119,12 +138,12 @@ public class CryDetectionService extends Service {
         super.onDestroy();
         if (yamnetMonitor != null) yamnetMonitor.stop();
 
-        // ⭐ [추가] 서비스가 종료되면 CPU 잠금을 풀어줍니다.
         if (wakeLock != null && wakeLock.isHeld()) {
             wakeLock.release();
         }
 
         isRunning = false;
+        isProcessing = false; // 서비스 종료 시 플래그 초기화
     }
 
     @Nullable

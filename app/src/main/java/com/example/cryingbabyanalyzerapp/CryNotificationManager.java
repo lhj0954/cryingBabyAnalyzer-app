@@ -11,6 +11,8 @@ import android.os.PowerManager;
 
 import androidx.core.app.NotificationCompat;
 
+import java.util.Locale;
+
 public class CryNotificationManager {
 
     private static final String CHANNEL_ID = "BabyCryAlertChannel";
@@ -24,20 +26,33 @@ public class CryNotificationManager {
         createNotificationChannel();
     }
 
-    // 채널 생성 (내부에서만 사용하므로 private)
+    // 💡 [추가] 영문 라벨 명을 메인 화면과 똑같은 한국어 가이드 문구로 변경하는 함수
+    private String convertLabelToKorean(String input) {
+        if (input == null || input.isEmpty()) return "아기가 울고 있어요.";
+
+        String lower = input.toLowerCase(Locale.US);
+        if (lower.contains("uncomfortable")) return "아기가 불편함을 느끼고 있어요.";
+        if (lower.contains("awake")) return "아기가 깼어요.";
+        if (lower.contains("diaper")) return "아기 기저귀를 확인해주세요.";
+        if (lower.contains("hug")) return "아기가 안아달라고 보채고 있어요.";
+        if (lower.contains("hungry")) return "아기가 배고파요.";
+        if (lower.contains("sleepy")) return "아기가 졸려요.";
+
+        return input; // 매칭되지 않는 기본 텍스트 보호
+    }
+
+    // 채널 생성
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CharSequence name = "아기 울음 감지 알림 (긴급)";
             String description = "화면이 꺼져있어도 울음소리를 즉시 알려줍니다.";
 
-            // ⭐ IMPORTANCE_HIGH: 소리/진동 발생 및 헤드업 팝업 허용
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, NotificationManager.IMPORTANCE_HIGH);
             channel.setDescription(description);
 
-            // ⭐ 진동 및 잠금화면 표시 강제 설정
             channel.enableVibration(true);
             channel.setVibrationPattern(new long[]{0, 500, 200, 500, 200, 500}); // 징~ 징~ 징~
-            channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC); // 잠금화면에서 내용 숨기지 않음
+            channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
 
             if (notificationManager != null) {
                 notificationManager.createNotificationChannel(channel);
@@ -45,33 +60,34 @@ public class CryNotificationManager {
         }
     }
 
-    // 외부(MainActivity 등)에서 알림을 보낼 때 호출하는 메서드
+    // 외부(MainActivity 및 CryDetectionService)에서 알림을 보낼 때 호출하는 메서드
     public void sendCryNotification(String label, float confidence) {
         // 1. 인텐트 설정
         Intent intent = new Intent(context, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 
-        // ⭐ 2. 까만 화면 강제로 켜기 (WakeLock)
+        // 2. 까만 화면 강제로 켜기 (WakeLock)
         PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
         if (pm != null) {
             PowerManager.WakeLock wakeLock = pm.newWakeLock(
                     PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP,
                     "CryAnalyzer::UrgentAlertWakeLock"
             );
-            // 5초 동안만 화면을 켜고 스스로 꺼지게 합니다 (배터리 절약)
-            wakeLock.acquire(5000);
+            wakeLock.acquire(5000); // 5초 동안 화면 켬
         }
 
+        // 💡 [수정] 복잡한 수치(Confidence) 및 영어 라벨을 없애고 직관적인 한국어 문구만 표시되도록 수정
+        String contentText = convertLabelToKorean(label);
+
         // 3. 알림 디자인 및 설정
-        String contentText = "분석 결과: " + label + " (" + (int)(confidence * 100) + "%)";
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("🚨 아기가 울고 있어요!")
-                .setContentText(contentText)
-                .setPriority(NotificationCompat.PRIORITY_MAX) // 최우선 순위
-                .setDefaults(NotificationCompat.DEFAULT_ALL)  // 시스템 기본 소리/진동 사용
-                .setFullScreenIntent(pendingIntent, true)     // ⭐ 잠금화면을 뚫고 나오는 핵심 설정
+                .setContentTitle("🚨 아기 울음 감지!")
+                .setContentText(contentText) // 💡 변환된 한국어 문구가 들어갑니다.
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setFullScreenIntent(pendingIntent, true)
                 .setAutoCancel(true);
 
         // 4. 알림 전송 (권한 재확인)
@@ -82,7 +98,6 @@ public class CryNotificationManager {
                     return;
                 }
             }
-            // 알림이 씹히지 않도록 현재 시간을 ID로 사용
             notificationManager.notify((int) System.currentTimeMillis(), builder.build());
         }
     }
