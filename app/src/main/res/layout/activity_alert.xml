@@ -44,6 +44,8 @@
         android:layout_height="wrap_content"
         android:text="결과 확인 및 피드백 남기기"
         android:textSize="18sp"
+        android:textColor="#222222"
+        android:backgroundTint="#FFFFFF"
         android:layout_marginBottom="14dp" />
 
     <Button
@@ -51,6 +53,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="알림 끄기"
-        android:textSize="18sp" />
+        android:textSize="18sp"
+        android:textColor="#222222"
+        android:backgroundTint="#FFFFFF" />
 
 </LinearLayout>

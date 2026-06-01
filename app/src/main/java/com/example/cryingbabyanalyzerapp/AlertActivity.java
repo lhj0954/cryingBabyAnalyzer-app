@@ -50,8 +50,23 @@ public class AlertActivity extends AppCompatActivity {
         btnOpenFeedback = findViewById(R.id.btnOpenFeedback);
         btnDismissAlert = findViewById(R.id.btnDismissAlert);
 
-        label = getIntent().getStringExtra("label");
-        confidence = getIntent().getFloatExtra("confidence", 0f);
+        btnOpenFeedback.setText("결과 확인 및 피드백 남기기");
+        btnDismissAlert.setText("알림 끄기");
+
+        Intent receivedIntent = getIntent();
+
+        label = receivedIntent.getStringExtra("label");
+        confidence = receivedIntent.getFloatExtra("confidence", -1f);
+
+        String resultText = receivedIntent.getStringExtra("RESULT_TEXT");
+
+        if ((label == null || label.isEmpty()) && resultText != null) {
+            label = resultText;
+        }
+
+        if (confidence < 0f) {
+            confidence = 0f;
+        }
 
         txtAlertCause.setText(convertLabelToKorean(label));
         txtAlertConfidence.setText(

@@ -92,6 +92,41 @@ public class CryDetectionService extends Service {
                         if (response != null && response.prediction != null) {
                             label = response.prediction.label;
                             confidence = response.prediction.confidence;
+
+                            String resultText =
+                                    "label = " + label + "\n" +
+                                            "confidence = " + String.format(java.util.Locale.US, "%.3f", confidence);
+
+                            notificationManager.sendCryNotification(label, confidence);
+
+                            Intent alertIntent = new Intent(CryDetectionService.this, AlertActivity.class);
+                            alertIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+                            // AlertActivity에서 확실하게 받을 값들
+                            alertIntent.putExtra("label", label);
+                            alertIntent.putExtra("confidence", confidence);
+                            alertIntent.putExtra("RESULT_TEXT", resultText);
+
+                            startActivity(alertIntent);
+                        }if (response != null && response.prediction != null) {
+                            label = response.prediction.label;
+                            confidence = response.prediction.confidence;
+
+                            String resultText =
+                                    "label = " + label + "\n" +
+                                            "confidence = " + String.format(java.util.Locale.US, "%.3f", confidence);
+
+                            notificationManager.sendCryNotification(label, confidence);
+
+                            Intent alertIntent = new Intent(CryDetectionService.this, AlertActivity.class);
+                            alertIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+                            // AlertActivity에서 확실하게 받을 값들
+                            alertIntent.putExtra("label", label);
+                            alertIntent.putExtra("confidence", confidence);
+                            alertIntent.putExtra("RESULT_TEXT", resultText);
+
+                            startActivity(alertIntent);
                         }
 
                         // 1. 메인 화면의 한글 변환 가이드와 정상 연동되도록 깔끔한 영어 라벨만 변수에 기억

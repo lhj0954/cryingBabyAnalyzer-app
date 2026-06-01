@@ -282,14 +282,17 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean hasRequiredPermissions() {
         boolean audioGranted = ContextCompat.checkSelfPermission(
-                this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+                this, Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED;
 
         boolean cameraGranted = ContextCompat.checkSelfPermission(
-                this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+                this, Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             boolean notifyGranted = ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+                    this, Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED;
 
             return audioGranted && cameraGranted && notifyGranted;
         } else {
