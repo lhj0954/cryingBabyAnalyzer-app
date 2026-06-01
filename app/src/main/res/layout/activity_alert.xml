@@ -1,43 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/alertRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:background="#FF6B6B"
-    android:padding="24dp">
+    android:background="#FF4D4D"
+    android:padding="28dp">
 
     <TextView
+        android:id="@+id/txtAlertTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="불편함 (82%)"
-        android:textSize="28sp"
+        android:text="아기가 울고 있어요!"
+        android:textSize="30sp"
         android:textStyle="bold"
         android:textColor="#FFFFFF"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="20dp" />
 
     <TextView
+        android:id="@+id/txtAlertCause"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="분석 결과 확인 중"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/txtAlertConfidence"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="즉시 확인이 필요합니다"
+        android:text="신뢰도"
         android:textSize="18sp"
         android:textColor="#FFFFFF"
-        android:layout_marginBottom="32dp"/>
+        android:layout_marginBottom="36dp" />
 
     <Button
+        android:id="@+id/btnOpenFeedback"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="수유 확인"
-        android:layout_marginBottom="12dp"/>
+        android:text="결과 확인 및 피드백 남기기"
+        android:textSize="18sp"
+        android:layout_marginBottom="14dp" />
 
     <Button
+        android:id="@+id/btnDismissAlert"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="기저귀 확인"
-        android:layout_marginBottom="12dp"/>
-
-    <Button
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="안아주기"/>
+        android:text="알림 끄기"
+        android:textSize="18sp" />
 
 </LinearLayout>

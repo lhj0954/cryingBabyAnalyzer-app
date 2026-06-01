@@ -16,6 +16,7 @@ import java.util.Locale;
 public class CryNotificationManager {
 
     private static final String CHANNEL_ID = "BabyCryAlertChannel";
+    public static final int ALERT_NOTIFICATION_ID = 200;
     private final Context context;
     private final NotificationManager notificationManager;
 
@@ -63,9 +64,17 @@ public class CryNotificationManager {
     // 외부(MainActivity 및 CryDetectionService)에서 알림을 보낼 때 호출하는 메서드
     public void sendCryNotification(String label, float confidence) {
         // 1. 인텐트 설정
-        Intent intent = new Intent(context, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        Intent intent = new Intent(context, AlertActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.putExtra("label", label);
+        intent.putExtra("confidence", confidence);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+        );
 
         // 2. 까만 화면 강제로 켜기 (WakeLock)
         PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
@@ -84,10 +93,13 @@ public class CryNotificationManager {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("🚨 아기 울음 감지!")
-                .setContentText(contentText) // 💡 변환된 한국어 문구가 들어갑니다.
+                .setContentText(contentText)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setFullScreenIntent(pendingIntent, true)
+                .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
 
         // 4. 알림 전송 (권한 재확인)
@@ -98,7 +110,7 @@ public class CryNotificationManager {
                     return;
                 }
             }
-            notificationManager.notify((int) System.currentTimeMillis(), builder.build());
+            notificationManager.notify(ALERT_NOTIFICATION_ID, builder.build());
         }
     }
 }

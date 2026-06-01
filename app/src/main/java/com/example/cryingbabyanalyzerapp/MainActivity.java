@@ -284,12 +284,16 @@ public class MainActivity extends AppCompatActivity {
         boolean audioGranted = ContextCompat.checkSelfPermission(
                 this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
 
+        boolean cameraGranted = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             boolean notifyGranted = ContextCompat.checkSelfPermission(
                     this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
-            return audioGranted && notifyGranted;
+
+            return audioGranted && cameraGranted && notifyGranted;
         } else {
-            return audioGranted;
+            return audioGranted && cameraGranted;
         }
     }
 
@@ -299,6 +303,7 @@ public class MainActivity extends AppCompatActivity {
                     this,
                     new String[]{
                             Manifest.permission.RECORD_AUDIO,
+                            Manifest.permission.CAMERA,
                             Manifest.permission.POST_NOTIFICATIONS
                     },
                     REQ_RECORD_AUDIO
@@ -306,7 +311,10 @@ public class MainActivity extends AppCompatActivity {
         } else {
             ActivityCompat.requestPermissions(
                     this,
-                    new String[]{Manifest.permission.RECORD_AUDIO},
+                    new String[]{
+                            Manifest.permission.RECORD_AUDIO,
+                            Manifest.permission.CAMERA
+                    },
                     REQ_RECORD_AUDIO
             );
         }
@@ -328,9 +336,9 @@ public class MainActivity extends AppCompatActivity {
             }
 
             if (allGranted) {
-                txtStatus.setText("권한이 승인되었습니다. 버튼이나 스위치를 다시 눌러주세요.");
-            } else {
                 txtStatus.setText("앱을 사용하려면 마이크 및 알림 권한이 필요합니다.");
+            } else {
+                txtStatus.setText("앱을 사용하려면 마이크, 알림, 플래시 권한이 필요합니다.");
             }
         }
     }
