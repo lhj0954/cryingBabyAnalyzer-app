@@ -12,7 +12,6 @@
         android:id="@+id/txtAlertTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="아기가 울고 있어요!"
         android:textSize="30sp"
         android:textStyle="bold"
         android:textColor="#FFFFFF"
@@ -33,7 +32,6 @@
         android:id="@+id/txtAlertConfidence"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="신뢰도"
         android:textSize="18sp"
         android:textColor="#FFFFFF"
         android:layout_marginBottom="36dp" />
