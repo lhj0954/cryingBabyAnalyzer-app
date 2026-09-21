@@ -1,9 +1,5 @@
 package com.example.cryingbabyanalyzerapp;
 
-/*
-* json 응답 받아서 파싱
-* */
-
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -35,6 +31,11 @@ public class CryApiService {
 
     public interface StatsCallback {
         void onSuccess(RecordsStats stats);
+        void onFailure(String message);
+    }
+
+    public interface FeedbackCallback {
+        void onSuccess(CryRecord record);
         void onFailure(String message);
     }
 
@@ -78,6 +79,11 @@ public class CryApiService {
         public Float confidence;
         public Float duration_sec;
         public String message;
+
+        public Boolean feedback_correct;
+        public String actual_reason;
+        public String caregiver_action;
+        public String feedback_created_at;
     }
 
     public static class RecordsStats {
@@ -94,6 +100,18 @@ public class CryApiService {
     public static class HourCount {
         public String hour;
         public int count;
+    }
+
+    private static class FeedbackBody {
+        boolean correct;
+        String actual_reason;
+        String caregiver_action;
+
+        FeedbackBody(boolean correct, String actualReason, String caregiverAction) {
+            this.correct = correct;
+            this.actual_reason = actualReason;
+            this.caregiver_action = caregiverAction;
+        }
     }
 
     private final OkHttpClient client = new OkHttpClient();
@@ -146,7 +164,7 @@ public class CryApiService {
 
     public void getRecords(RecordsCallback callback) {
         Request request = new Request.Builder()
-                .url(recordsUrl + "?limit=100")
+                .url(recordsUrl + "?limit=500")
                 .get()
                 .build();
 
@@ -166,6 +184,49 @@ public class CryApiService {
                 String body = response.body() != null ? response.body().string() : "[]";
                 Type type = new TypeToken<List<CryRecord>>() {}.getType();
                 List<CryRecord> parsed = gson.fromJson(body, type);
+                callback.onSuccess(parsed);
+            }
+        });
+    }
+
+    public void submitFeedback(
+            int recordId,
+            boolean correct,
+            String actualReason,
+            String caregiverAction,
+            FeedbackCallback callback
+    ) {
+        FeedbackBody bodyData = new FeedbackBody(
+                correct,
+                actualReason,
+                caregiverAction
+        );
+
+        RequestBody body = RequestBody.create(
+                gson.toJson(bodyData),
+                MediaType.parse("application/json; charset=utf-8")
+        );
+
+        Request request = new Request.Builder()
+                .url(recordsUrl + "/" + recordId + "/feedback")
+                .post(body)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                callback.onFailure("피드백 저장 실패: " + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    callback.onFailure("서버 오류: " + response.code());
+                    return;
+                }
+
+                String bodyText = response.body() != null ? response.body().string() : "{}";
+                CryRecord parsed = gson.fromJson(bodyText, CryRecord.class);
                 callback.onSuccess(parsed);
             }
         });
