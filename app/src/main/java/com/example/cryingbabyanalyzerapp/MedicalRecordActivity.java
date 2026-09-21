@@ -29,9 +29,11 @@ public class MedicalRecordActivity extends AppCompatActivity {
     private TextView tvSummary;
     private TextView tvEmpty;
     private TextView tvQuestionnaireSaved;
+    private TextView tvSavedQuestionnaireSummary;
     private LinearLayout recordListContainer;
     private Button btnRefresh;
     private Button btnSaveQuestionnaire;
+    private Button btnLoadSavedQuestionnaire;
 
     private EditText etAgeMonths;
     private EditText etBirthWeight;
@@ -67,10 +69,11 @@ public class MedicalRecordActivity extends AppCompatActivity {
         apiService = new CryApiService(BuildConfig.SERVER_IP);
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 
-        loadQuestionnaire();
+        showSavedQuestionnaireSummary();
 
         btnRefresh.setOnClickListener(v -> loadRecords());
         btnSaveQuestionnaire.setOnClickListener(v -> saveQuestionnaire());
+        btnLoadSavedQuestionnaire.setOnClickListener(v -> loadSavedQuestionnaireIntoForm());
 
         loadRecords();
     }
@@ -79,9 +82,11 @@ public class MedicalRecordActivity extends AppCompatActivity {
         tvSummary = findViewById(R.id.tvSummary);
         tvEmpty = findViewById(R.id.tvEmpty);
         tvQuestionnaireSaved = findViewById(R.id.tvQuestionnaireSaved);
+        tvSavedQuestionnaireSummary = findViewById(R.id.tvSavedQuestionnaireSummary);
         recordListContainer = findViewById(R.id.recordListContainer);
         btnRefresh = findViewById(R.id.btnRefresh);
         btnSaveQuestionnaire = findViewById(R.id.btnSaveQuestionnaire);
+        btnLoadSavedQuestionnaire = findViewById(R.id.btnLoadSavedQuestionnaire);
 
         etAgeMonths = findViewById(R.id.etAgeMonths);
         etBirthWeight = findViewById(R.id.etBirthWeight);
@@ -325,11 +330,88 @@ public class MedicalRecordActivity extends AppCompatActivity {
         editor.putLong("saved_at", System.currentTimeMillis());
         editor.apply();
 
-        tvQuestionnaireSaved.setText("문진 정보가 이 기기에 저장되었습니다.");
+        showSavedQuestionnaireSummary();
+        clearQuestionnaireForm();
+
+        tvQuestionnaireSaved.setText("저장 완료 · 아래 '저장된 문진 정보'에서 확인할 수 있습니다.");
         Toast.makeText(this, "문진 정보를 저장했습니다.", Toast.LENGTH_SHORT).show();
     }
 
-    private void loadQuestionnaire() {
+    private void showSavedQuestionnaireSummary() {
+        long savedAt = prefs.getLong("saved_at", 0L);
+
+        if (savedAt == 0L) {
+            tvSavedQuestionnaireSummary.setText("아직 저장된 문진 정보가 없습니다.");
+            btnLoadSavedQuestionnaire.setEnabled(false);
+            tvQuestionnaireSaved.setText("문진 정보는 이 기기에만 저장됩니다.");
+            return;
+        }
+
+        btnLoadSavedQuestionnaire.setEnabled(true);
+
+        String age = valueOrDash(prefs.getString("age_months", ""));
+        String birthWeight = valueOrDash(prefs.getString("birth_weight", ""));
+        String feeds = valueOrDash(prefs.getString("feeds_per_day", ""));
+        String sleep = valueOrDash(prefs.getString("sleep_hours", ""));
+        String wetDiapers = valueOrDash(prefs.getString("wet_diapers", ""));
+        String stoolCount = valueOrDash(prefs.getString("stool_count", ""));
+        String memo = valueOrDash(prefs.getString("caregiver_memo", ""));
+
+        String feedingType = "미입력";
+        int feedingTypeId = prefs.getInt("feeding_type", -1);
+        if (feedingTypeId == R.id.rbBreast) {
+            feedingType = "모유";
+        } else if (feedingTypeId == R.id.rbFormula) {
+            feedingType = "분유";
+        } else if (feedingTypeId == R.id.rbMixed) {
+            feedingType = "혼합";
+        }
+
+        StringBuilder symptoms = new StringBuilder();
+        appendCheckedItem(symptoms, prefs.getBoolean("fever", false), "발열");
+        appendCheckedItem(symptoms, prefs.getBoolean("vomiting", false), "구토");
+        appendCheckedItem(symptoms, prefs.getBoolean("diarrhea", false), "설사");
+        appendCheckedItem(symptoms, prefs.getBoolean("breathing", false), "호흡 변화");
+        appendCheckedItem(symptoms, prefs.getBoolean("lethargy", false), "처짐/반응 저하");
+        appendCheckedItem(symptoms, prefs.getBoolean("rash", false), "발진");
+        appendCheckedItem(symptoms, prefs.getBoolean("constipation_or_blood", false), "심한 변비/혈변 의심");
+
+        if (symptoms.length() == 0) {
+            symptoms.append("체크된 항목 없음");
+        }
+
+        StringBuilder observations = new StringBuilder();
+        appendCheckedItem(observations, prefs.getBoolean("preterm", false), "미숙아 출생");
+        appendCheckedItem(observations, prefs.getBoolean("feeding_decrease", false), "최근 수유량/횟수 감소");
+        appendCheckedItem(observations, prefs.getBoolean("hard_to_soothe", false), "평소보다 달래기 어려움");
+
+        if (observations.length() == 0) {
+            observations.append("체크된 항목 없음");
+        }
+
+        SimpleDateFormat displayFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.KOREA);
+
+        String summary = "마지막 저장: " + displayFormat.format(new Date(savedAt)) + "\n\n"
+                + "[기본 정보]\n"
+                + "생후 개월 수: " + age + "\n"
+                + "출생체중: " + (birthWeight.equals("-") ? "-" : birthWeight + " g") + "\n"
+                + "특이사항: " + observations + "\n\n"
+                + "[수유 · 수면 · 배변]\n"
+                + "수유 형태: " + feedingType + "\n"
+                + "하루 수유 횟수: " + feeds + "\n"
+                + "하루 수면시간: " + (sleep.equals("-") ? "-" : sleep + "시간") + "\n"
+                + "젖은 기저귀: " + wetDiapers + "회\n"
+                + "대변: " + stoolCount + "회\n\n"
+                + "[최근 동반 증상]\n"
+                + symptoms + "\n\n"
+                + "[보호자 메모]\n"
+                + memo;
+
+        tvSavedQuestionnaireSummary.setText(summary);
+        tvQuestionnaireSaved.setText("마지막 저장: " + displayFormat.format(new Date(savedAt)));
+    }
+
+    private void loadSavedQuestionnaireIntoForm() {
         etAgeMonths.setText(prefs.getString("age_months", ""));
         etBirthWeight.setText(prefs.getString("birth_weight", ""));
         etFeedsPerDay.setText(prefs.getString("feeds_per_day", ""));
@@ -341,6 +423,8 @@ public class MedicalRecordActivity extends AppCompatActivity {
         int feedingTypeId = prefs.getInt("feeding_type", -1);
         if (feedingTypeId != -1) {
             rgFeedingType.check(feedingTypeId);
+        } else {
+            rgFeedingType.clearCheck();
         }
 
         cbPreterm.setChecked(prefs.getBoolean("preterm", false));
@@ -354,11 +438,46 @@ public class MedicalRecordActivity extends AppCompatActivity {
         cbRash.setChecked(prefs.getBoolean("rash", false));
         cbConstipationOrBlood.setChecked(prefs.getBoolean("constipation_or_blood", false));
 
-        long savedAt = prefs.getLong("saved_at", 0L);
-        if (savedAt > 0L) {
-            SimpleDateFormat displayFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.KOREA);
-            tvQuestionnaireSaved.setText("마지막 저장: " + displayFormat.format(new Date(savedAt)));
+        tvQuestionnaireSaved.setText("저장된 문진 정보를 입력칸에 불러왔습니다. 수정 후 다시 저장하세요.");
+        Toast.makeText(this, "저장된 문진을 불러왔습니다.", Toast.LENGTH_SHORT).show();
+    }
+
+    private void clearQuestionnaireForm() {
+        etAgeMonths.setText("");
+        etBirthWeight.setText("");
+        etFeedsPerDay.setText("");
+        etWetDiapers.setText("");
+        etStoolCount.setText("");
+        etSleepHours.setText("");
+        etCaregiverMemo.setText("");
+
+        rgFeedingType.clearCheck();
+
+        cbPreterm.setChecked(false);
+        cbFeedingDecrease.setChecked(false);
+        cbHardToSoothe.setChecked(false);
+        cbFever.setChecked(false);
+        cbVomiting.setChecked(false);
+        cbDiarrhea.setChecked(false);
+        cbBreathing.setChecked(false);
+        cbLethargy.setChecked(false);
+        cbRash.setChecked(false);
+        cbConstipationOrBlood.setChecked(false);
+    }
+
+    private void appendCheckedItem(StringBuilder builder, boolean checked, String text) {
+        if (!checked) return;
+        if (builder.length() > 0) {
+            builder.append(", ");
         }
+        builder.append(text);
+    }
+
+    private String valueOrDash(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return "-";
+        }
+        return value.trim();
     }
 
     private String convertLabelToKorean(String input) {
