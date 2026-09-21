@@ -22,6 +22,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
 import java.io.File;
 import java.util.Locale;
 import java.util.concurrent.Executors;
@@ -35,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView txtStatus;
     private TextView txtResult;
     private Switch switchBackground;
+    private BottomNavigationView bottomNavigationView;
 
     private View viewRipple1;
     private View viewRipple2;
@@ -89,12 +92,15 @@ public class MainActivity extends AppCompatActivity {
         txtStatus = findViewById(R.id.txtStatus);
         txtResult = findViewById(R.id.txtResult);
         switchBackground = findViewById(R.id.switchBackground);
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
 
         viewRipple1 = findViewById(R.id.viewRipple1);
         viewRipple2 = findViewById(R.id.viewRipple2);
 
         apiService = new CryApiService(BuildConfig.SERVER_IP);
         notificationManager = new CryNotificationManager(this);
+
+        setupBottomNavigation();
 
         yamnetMonitor = new YamnetMonitor(this, new YamnetMonitor.Listener() {
             @Override
@@ -162,6 +168,26 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 stopBackgroundService();
             }
+        });
+    }
+
+    private void setupBottomNavigation() {
+        if (bottomNavigationView == null) return;
+
+        bottomNavigationView.setSelectedItemId(R.id.nav_home);
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.nav_home) {
+                return true;
+            }
+
+            if (itemId == R.id.nav_medical_record) {
+                startActivity(new Intent(MainActivity.this, MedicalRecordActivity.class));
+                return true;
+            }
+
+            return false;
         });
     }
 
@@ -240,7 +266,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(final CryApiService.PredictResponse response) {
                         txtStatus.post(() -> {
-                            // 💡 [핵심 변경] 서버 분석 성공 시 감지 모드를 자동으로 끕니다. (이펙트 스톱 및 상태 초기화)
+                            // 서버 분석 성공 시 감지 모드를 자동으로 끕니다. (이펙트 스톱 및 상태 초기화)
                             stopDetectMode();
 
                             String label = "없음";
@@ -263,7 +289,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(final String message) {
                         txtStatus.post(() -> {
-                            // 💡 실패 시에도 모드와 이펙트를 자동 종료한 후 에러 메시지를 노출합니다.
+                            // 실패 시에도 모드와 이펙트를 자동 종료한 후 에러 메시지를 노출합니다.
                             stopDetectMode();
                             txtStatus.setText(message);
                         });
@@ -272,7 +298,7 @@ public class MainActivity extends AppCompatActivity {
 
             } catch (final Exception e) {
                 txtStatus.post(() -> {
-                    // 💡 예외 발생 시에도 모드와 이펙트를 자동 종료한 후 에러 메시지를 노출합니다.
+                    // 예외 발생 시에도 모드와 이펙트를 자동 종료한 후 에러 메시지를 노출합니다.
                     stopDetectMode();
                     txtStatus.setText("녹음 실패: " + e.getMessage());
                 });
@@ -358,6 +384,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setSelectedItemId(R.id.nav_home);
+        }
 
         IntentFilter filter = new IntentFilter("com.example.cryingbabyanalyzerapp.RESULT_UPDATE");
 
