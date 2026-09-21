@@ -16,8 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CryDetectionService extends Service {
 
-    public static String lastResultText = "";
-
+    public static String lastResultText = "";\n    public static int lastRecordId = -1;\n
     private YamnetMonitor yamnetMonitor;
     private CryApiService apiService;
     private CryNotificationManager notificationManager;
@@ -283,8 +282,7 @@ public class CryDetectionService extends Service {
                                      * 3. 분석 결과 저장
                                      * =================================================
                                      */
-                                    lastResultText = label;
-
+                                    lastResultText = label;\n                                    lastRecordId = (response != null && response.record_id != null)\n                                            ? response.record_id\n                                            : -1;\n
 
                                     /*
                                      * =================================================
