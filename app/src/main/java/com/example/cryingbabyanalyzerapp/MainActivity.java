@@ -280,7 +280,13 @@ public class MainActivity extends AppCompatActivity {
                                 confidence = response.prediction.confidence;
                             }
 
-                            currentRecordId = (response != null && response.record_id != null)\n                                    ? response.record_id\n                                    : -1;\n\n                            txtResult.setText(convertLabelToKorean(label));\n                            btnFeedback.setVisibility(View.VISIBLE);\n
+                            currentRecordId = (response != null && response.record_id != null)
+                                    ? response.record_id
+                                    : -1;
+
+                            txtResult.setText(convertLabelToKorean(label));
+                            btnFeedback.setVisibility(View.VISIBLE);
+
                             if (response != null && response.prediction != null) {
                                 notificationManager.sendCryNotification(label, confidence);
                             }
