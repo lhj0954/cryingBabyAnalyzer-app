@@ -42,7 +42,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="최근 7일 울음 패턴"
+            android:text="울음 패턴 요약"
             android:textColor="#2C3E50"
             android:textSize="19sp"
             android:textStyle="bold" />
@@ -69,6 +69,49 @@
             android:text="울음 기록 새로고침"
             android:textColor="#FFFFFF"
             android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="조회 조건"
+            android:textColor="#2C3E50"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_record_card"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="기간"
+                android:textColor="#34495E"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/spinnerPeriod"
+                android:layout_width="match_parent"
+                android:layout_height="48dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="울음 원인"
+                android:textColor="#34495E"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/spinnerLabel"
+                android:layout_width="match_parent"
+                android:layout_height="48dp" />
+        </LinearLayout>
 
         <Button
             android:id="@+id/btnToggleSpecialNoteForm"
