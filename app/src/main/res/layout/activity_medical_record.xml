@@ -74,9 +74,26 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="기본 정보"
+            android:text="문진 정보 작성"
             android:textColor="#2C3E50"
             android:textSize="19sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="저장하면 입력칸은 비워지고, 아래 '저장된 문진 정보'에서 확인할 수 있습니다."
+            android:textColor="#7F8C8D"
+            android:textSize="13sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="기본 정보"
+            android:textColor="#2C3E50"
+            android:textSize="17sp"
             android:textStyle="bold" />
 
         <EditText
@@ -108,7 +125,7 @@
             android:layout_marginTop="18dp"
             android:text="수유 · 수면 · 배변"
             android:textColor="#2C3E50"
-            android:textSize="19sp"
+            android:textSize="17sp"
             android:textStyle="bold" />
 
         <TextView
@@ -194,7 +211,7 @@
             android:layout_marginTop="18dp"
             android:text="최근 동반 증상"
             android:textColor="#2C3E50"
-            android:textSize="19sp"
+            android:textSize="17sp"
             android:textStyle="bold" />
 
         <TextView
@@ -253,7 +270,7 @@
             android:layout_marginTop="18dp"
             android:text="보호자 메모"
             android:textColor="#2C3E50"
-            android:textSize="19sp"
+            android:textSize="17sp"
             android:textStyle="bold" />
 
         <EditText
@@ -285,6 +302,37 @@
             android:text="문진 정보는 이 기기에만 저장됩니다."
             android:textColor="#7F8C8D"
             android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:text="저장된 문진 정보"
+            android:textColor="#2C3E50"
+            android:textSize="19sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvSavedQuestionnaireSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_record_card"
+            android:lineSpacingExtra="3dp"
+            android:padding="18dp"
+            android:text="아직 저장된 문진 정보가 없습니다."
+            android:textColor="#34495E"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/btnLoadSavedQuestionnaire"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="#7F8C8D"
+            android:text="저장된 문진 불러와 수정"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
 
         <TextView
             android:layout_width="match_parent"
