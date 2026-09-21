@@ -1,73 +1,321 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
-    android:orientation="vertical"
-    android:padding="20dp">
+    android:background="#FFFFFF">
 
-    <TextView
-        android:id="@+id/tvTitle"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="진료용 기록"
-        android:textColor="#2C3E50"
-        android:textSize="26sp"
-        android:textStyle="bold" />
+        android:orientation="vertical"
+        android:padding="20dp">
 
-    <TextView
-        android:id="@+id/tvSubTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:text="아기 울음 분석 결과를 병원 진료 참고용으로 확인합니다."
-        android:textColor="#7F8C8D"
-        android:textSize="14sp" />
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="진료용 문진 요약"
+            android:textColor="#2C3E50"
+            android:textSize="26sp"
+            android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/tvSummary"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="18dp"
-        android:background="@drawable/bg_record_card"
-        android:padding="18dp"
-        android:text="총 울음 기록: 0회"
-        android:textColor="#2C3E50"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        <TextView
+            android:id="@+id/tvSubTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="최근 울음 기록과 보호자 문진 정보를 한 화면에서 정리합니다."
+            android:textColor="#7F8C8D"
+            android:textSize="14sp" />
 
-    <Button
-        android:id="@+id/btnRefresh"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginTop="14dp"
-        android:backgroundTint="#FF7A85"
-        android:text="기록 새로고침"
-        android:textColor="#FFFFFF"
-        android:textStyle="bold" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="#FFF5F6"
+            android:padding="12dp"
+            android:text="※ 본 화면은 진료 참고용 기록이며 의료적 진단을 의미하지 않습니다."
+            android:textColor="#B04A56"
+            android:textSize="13sp" />
 
-    <TextView
-        android:id="@+id/tvEmpty"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:gravity="center"
-        android:text="아직 저장된 진료용 기록이 없습니다."
-        android:textColor="#95A5A6"
-        android:textSize="16sp"
-        android:visibility="gone" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="최근 7일 울음 패턴"
+            android:textColor="#2C3E50"
+            android:textSize="19sp"
+            android:textStyle="bold" />
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="18dp"
-        android:layout_weight="1">
+        <TextView
+            android:id="@+id/tvSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_record_card"
+            android:lineSpacingExtra="4dp"
+            android:padding="18dp"
+            android:text="최근 7일 울음 감지: 0회"
+            android:textColor="#2C3E50"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnRefresh"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="#FF7A85"
+            android:text="울음 기록 새로고침"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="기본 정보"
+            android:textColor="#2C3E50"
+            android:textSize="19sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etAgeMonths"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="생후 개월 수"
+            android:inputType="number"
+            android:maxLines="1" />
+
+        <EditText
+            android:id="@+id/etBirthWeight"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="출생체중(g)"
+            android:inputType="numberDecimal"
+            android:maxLines="1" />
+
+        <CheckBox
+            android:id="@+id/cbPreterm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="미숙아로 출생함" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="수유 · 수면 · 배변"
+            android:textColor="#2C3E50"
+            android:textSize="19sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="수유 형태"
+            android:textColor="#34495E"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rgFeedingType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rbBreast"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="모유" />
+
+            <RadioButton
+                android:id="@+id/rbFormula"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="분유" />
+
+            <RadioButton
+                android:id="@+id/rbMixed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="혼합" />
+        </RadioGroup>
+
+        <EditText
+            android:id="@+id/etFeedsPerDay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="하루 수유 횟수"
+            android:inputType="number"
+            android:maxLines="1" />
+
+        <EditText
+            android:id="@+id/etSleepHours"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="하루 수면시간(시간)"
+            android:inputType="numberDecimal"
+            android:maxLines="1" />
+
+        <EditText
+            android:id="@+id/etWetDiapers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="하루 젖은 기저귀 횟수"
+            android:inputType="number"
+            android:maxLines="1" />
+
+        <EditText
+            android:id="@+id/etStoolCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="하루 대변 횟수"
+            android:inputType="number"
+            android:maxLines="1" />
+
+        <CheckBox
+            android:id="@+id/cbFeedingDecrease"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="최근 평소보다 수유량 또는 수유 횟수가 줄었음" />
+
+        <CheckBox
+            android:id="@+id/cbHardToSoothe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="최근 평소보다 달래기 어려운 울음이 있음" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="최근 동반 증상"
+            android:textColor="#2C3E50"
+            android:textSize="19sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="해당되는 항목이 있으면 체크하세요."
+            android:textColor="#7F8C8D"
+            android:textSize="13sp" />
+
+        <CheckBox
+            android:id="@+id/cbFever"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="발열" />
+
+        <CheckBox
+            android:id="@+id/cbVomiting"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="구토" />
+
+        <CheckBox
+            android:id="@+id/cbDiarrhea"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="설사" />
+
+        <CheckBox
+            android:id="@+id/cbBreathing"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="호흡이 힘들어 보이거나 평소와 다른 호흡" />
+
+        <CheckBox
+            android:id="@+id/cbLethargy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="평소보다 처지거나 반응이 적음" />
+
+        <CheckBox
+            android:id="@+id/cbRash"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="새로 생긴 발진" />
+
+        <CheckBox
+            android:id="@+id/cbConstipationOrBlood"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="심한 변비 또는 혈변이 의심됨" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="보호자 메모"
+            android:textColor="#2C3E50"
+            android:textSize="19sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etCaregiverMemo"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_record_card"
+            android:gravity="top|start"
+            android:hint="평소와 다른 점, 울음 전후 상황, 의사에게 물어볼 내용을 적어주세요."
+            android:inputType="textMultiLine"
+            android:padding="14dp" />
+
+        <Button
+            android:id="@+id/btnSaveQuestionnaire"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="#5B8DEF"
+            android:text="문진 정보 기기에 저장"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvQuestionnaireSaved"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="문진 정보는 이 기기에만 저장됩니다."
+            android:textColor="#7F8C8D"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:text="최근 울음 기록"
+            android:textColor="#2C3E50"
+            android:textSize="19sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:gravity="center"
+            android:text="아직 저장된 진료용 기록이 없습니다."
+            android:textColor="#95A5A6"
+            android:textSize="16sp"
+            android:visibility="gone" />
 
         <LinearLayout
             android:id="@+id/recordListContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
             android:orientation="vertical" />
-    </ScrollView>
 
-</LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="24dp" />
+
+    </LinearLayout>
+</ScrollView>
