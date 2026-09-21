@@ -1,13 +1,17 @@
 package com.example.cryingbabyanalyzerapp;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -43,6 +47,10 @@ public class MedicalRecordActivity extends AppCompatActivity {
     private Button btnToggleSpecialNoteForm;
     private Button btnToggleSpecialNoteList;
     private Button btnSaveSpecialNote;
+    private Spinner spinnerPeriod;
+    private Spinner spinnerLabel;
+
+    private List<CryApiService.CryRecord> allRecords = new ArrayList<>();
 
     private EditText etAgeMonths;
     private EditText etBirthWeight;
@@ -81,13 +89,12 @@ public class MedicalRecordActivity extends AppCompatActivity {
 
         migrateOldQuestionnaireIfNeeded();
         refreshSpecialNoteList();
+        setupRecordFilters();
 
         btnRefresh.setOnClickListener(v -> loadRecords());
         btnToggleSpecialNoteForm.setOnClickListener(v -> toggleSpecialNoteForm());
         btnToggleSpecialNoteList.setOnClickListener(v -> toggleSpecialNoteList());
         btnSaveSpecialNote.setOnClickListener(v -> saveSpecialNote());
-
-        loadRecords();
     }
 
     private void bindViews() {
@@ -103,6 +110,8 @@ public class MedicalRecordActivity extends AppCompatActivity {
         btnToggleSpecialNoteForm = findViewById(R.id.btnToggleSpecialNoteForm);
         btnToggleSpecialNoteList = findViewById(R.id.btnToggleSpecialNoteList);
         btnSaveSpecialNote = findViewById(R.id.btnSaveSpecialNote);
+        spinnerPeriod = findViewById(R.id.spinnerPeriod);
+        spinnerLabel = findViewById(R.id.spinnerLabel);
 
         etAgeMonths = findViewById(R.id.etAgeMonths);
         etBirthWeight = findViewById(R.id.etBirthWeight);
@@ -138,8 +147,59 @@ public class MedicalRecordActivity extends AppCompatActivity {
         updateSpecialNoteListButtonText();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (apiService != null) {
+            loadRecords();
+        }
+    }
+
+    private void setupRecordFilters() {
+        String[] periods = {"오늘", "최근 7일", "최근 30일"};
+        ArrayAdapter<String> periodAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_item,
+                periods
+        );
+        periodAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerPeriod.setAdapter(periodAdapter);
+        spinnerPeriod.setSelection(1);
+
+        String[] labels = {
+                "전체 원인",
+                "배고픔",
+                "졸림",
+                "기저귀",
+                "안아달람",
+                "불편함",
+                "깸"
+        };
+        ArrayAdapter<String> labelAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_item,
+                labels
+        );
+        labelAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerLabel.setAdapter(labelAdapter);
+
+        AdapterView.OnItemSelectedListener listener = new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                applyRecordFilters();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        };
+
+        spinnerPeriod.setOnItemSelectedListener(listener);
+        spinnerLabel.setOnItemSelectedListener(listener);
+    }
+
     private void loadRecords() {
-        tvSummary.setText("최근 7일 울음 기록을 정리하는 중...");
+        tvSummary.setText("울음 기록을 정리하는 중...");
         tvEmpty.setVisibility(View.GONE);
         recordListContainer.removeAllViews();
 
@@ -147,8 +207,8 @@ public class MedicalRecordActivity extends AppCompatActivity {
             @Override
             public void onSuccess(List<CryApiService.CryRecord> records) {
                 runOnUiThread(() -> {
-                    tvSummary.setText(buildClinicalSummary(records));
-                    showRecords(records);
+                    allRecords = records != null ? records : new ArrayList<>();
+                    applyRecordFilters();
                 });
             }
 
@@ -162,6 +222,159 @@ public class MedicalRecordActivity extends AppCompatActivity {
                 });
             }
         });
+    }
+
+    private void applyRecordFilters() {
+        if (spinnerPeriod == null || spinnerLabel == null) {
+            return;
+        }
+
+        List<CryApiService.CryRecord> filtered = new ArrayList<>();
+        long startTime = getSelectedStartTime();
+        long now = System.currentTimeMillis();
+        String selectedLabel = getSelectedRawLabel();
+
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA);
+
+        for (CryApiService.CryRecord record : allRecords) {
+            Date created = parseDate(format, record.created_at);
+            if (created == null || created.getTime() < startTime || created.getTime() > now) {
+                continue;
+            }
+
+            if (selectedLabel != null) {
+                if (record.label == null || !selectedLabel.equalsIgnoreCase(record.label)) {
+                    continue;
+                }
+            }
+
+            filtered.add(record);
+        }
+
+        tvSummary.setText(buildFilteredClinicalSummary(filtered));
+        showRecords(filtered);
+    }
+
+    private long getSelectedStartTime() {
+        int position = spinnerPeriod.getSelectedItemPosition();
+
+        if (position == 0) {
+            Calendar start = Calendar.getInstance();
+            start.set(Calendar.HOUR_OF_DAY, 0);
+            start.set(Calendar.MINUTE, 0);
+            start.set(Calendar.SECOND, 0);
+            start.set(Calendar.MILLISECOND, 0);
+            return start.getTimeInMillis();
+        }
+
+        int days = position == 2 ? 30 : 7;
+        return System.currentTimeMillis() - (days * 24L * 60L * 60L * 1000L);
+    }
+
+    private int getSelectedPeriodDays() {
+        int position = spinnerPeriod.getSelectedItemPosition();
+        if (position == 0) return 1;
+        if (position == 2) return 30;
+        return 7;
+    }
+
+    private String getSelectedPeriodTitle() {
+        Object item = spinnerPeriod.getSelectedItem();
+        return item != null ? item.toString() : "최근 7일";
+    }
+
+    private String getSelectedRawLabel() {
+        int position = spinnerLabel.getSelectedItemPosition();
+        if (position == 1) return "hungry";
+        if (position == 2) return "sleepy";
+        if (position == 3) return "diaper";
+        if (position == 4) return "hug";
+        if (position == 5) return "uncomfortable";
+        if (position == 6) return "awake";
+        return null;
+    }
+
+    private String buildFilteredClinicalSummary(List<CryApiService.CryRecord> records) {
+        int total = records != null ? records.size() : 0;
+        int days = getSelectedPeriodDays();
+        String periodTitle = getSelectedPeriodTitle();
+
+        if (total == 0) {
+            return periodTitle + " 울음 감지: 0회\n"
+                    + "하루 평균: 0.0회\n"
+                    + "가장 많이 감지된 원인: 없음\n"
+                    + "가장 많이 감지된 시간대: 없음\n"
+                    + "보호자 피드백 완료: 0회";
+        }
+
+        Map<String, Integer> labelCounts = new HashMap<>();
+        int[] timeBuckets = new int[4];
+        double durationSum = 0.0;
+        int durationCount = 0;
+        int feedbackCount = 0;
+
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA);
+
+        for (CryApiService.CryRecord record : records) {
+            if (record.label != null && !record.label.trim().isEmpty()) {
+                labelCounts.put(record.label, labelCounts.getOrDefault(record.label, 0) + 1);
+            }
+
+            if (record.duration_sec != null) {
+                durationSum += record.duration_sec;
+                durationCount++;
+            }
+
+            if (record.feedback_correct != null) {
+                feedbackCount++;
+            }
+
+            Date created = parseDate(format, record.created_at);
+            if (created != null) {
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(created);
+                int hour = calendar.get(Calendar.HOUR_OF_DAY);
+
+                if (hour < 6) {
+                    timeBuckets[0]++;
+                } else if (hour < 12) {
+                    timeBuckets[1]++;
+                } else if (hour < 18) {
+                    timeBuckets[2]++;
+                } else {
+                    timeBuckets[3]++;
+                }
+            }
+        }
+
+        String topLabel = "없음";
+        int topLabelCount = 0;
+        for (Map.Entry<String, Integer> entry : labelCounts.entrySet()) {
+            if (entry.getValue() > topLabelCount) {
+                topLabelCount = entry.getValue();
+                topLabel = convertLabelToKorean(entry.getKey()) + " (" + entry.getValue() + "회)";
+            }
+        }
+
+        String[] bucketLabels = {"00~06시", "06~12시", "12~18시", "18~24시"};
+        int topBucketIndex = 0;
+        for (int i = 1; i < timeBuckets.length; i++) {
+            if (timeBuckets[i] > timeBuckets[topBucketIndex]) {
+                topBucketIndex = i;
+            }
+        }
+
+        String averageDuration = durationCount > 0
+                ? String.format(Locale.KOREA, "%.1f초", durationSum / durationCount)
+                : "없음";
+
+        return periodTitle + " 울음 감지: " + total + "회\n"
+                + String.format(Locale.KOREA, "하루 평균: %.1f회\n", total / (double) days)
+                + "가장 많이 감지된 원인: " + topLabel + "\n"
+                + "가장 많이 감지된 시간대: " + bucketLabels[topBucketIndex]
+                + " (" + timeBuckets[topBucketIndex] + "회)\n"
+                + "평균 기록 길이: " + averageDuration + "\n"
+                + "보호자 피드백 완료: " + feedbackCount + "회";
     }
 
     private String buildClinicalSummary(List<CryApiService.CryRecord> records) {
@@ -314,6 +527,41 @@ public class MedicalRecordActivity extends AppCompatActivity {
         card.addView(tvLabel);
         card.addView(tvDetail);
 
+        if (record.feedback_correct != null) {
+            TextView tvFeedback = new TextView(this);
+            tvFeedback.setText(buildFeedbackText(record));
+            tvFeedback.setTextSize(14);
+            tvFeedback.setTextColor(0xFF2C3E50);
+            tvFeedback.setPadding(0, 12, 0, 0);
+            card.addView(tvFeedback);
+        } else {
+            Button feedbackButton = new Button(this);
+            feedbackButton.setText("이 기록에 피드백 작성");
+            feedbackButton.setAllCaps(false);
+
+            LinearLayout.LayoutParams feedbackParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            feedbackParams.setMargins(0, 12, 0, 0);
+            feedbackButton.setLayoutParams(feedbackParams);
+
+            feedbackButton.setOnClickListener(v -> {
+                Intent intent = new Intent(
+                        MedicalRecordActivity.this,
+                        FeedbackActivity.class
+                );
+                intent.putExtra("RECORD_ID", record.id);
+                intent.putExtra(
+                        "RESULT_TEXT",
+                        "분석 원인: " + convertLabelToKorean(record.label)
+                );
+                startActivity(intent);
+            });
+
+            card.addView(feedbackButton);
+        }
+
         return card;
     }
 
@@ -329,6 +577,31 @@ public class MedicalRecordActivity extends AppCompatActivity {
         }
 
         return confidenceText + " · " + durationText;
+    }
+
+    private String buildFeedbackText(CryApiService.CryRecord record) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("보호자 피드백: ");
+
+        if (Boolean.TRUE.equals(record.feedback_correct)) {
+            builder.append("분석 결과와 일치");
+        } else {
+            builder.append("분석 결과와 다름");
+            if (record.actual_reason != null && !record.actual_reason.trim().isEmpty()) {
+                builder.append("\n실제 원인: ")
+                        .append(convertLabelToKorean(record.actual_reason));
+            }
+        }
+
+        if (record.caregiver_action != null && !record.caregiver_action.trim().isEmpty()) {
+            builder.append("\n대처: ").append(record.caregiver_action);
+        }
+
+        if (record.feedback_created_at != null && !record.feedback_created_at.trim().isEmpty()) {
+            builder.append("\n피드백 저장: ").append(record.feedback_created_at);
+        }
+
+        return builder.toString();
     }
 
     private void saveSpecialNote() {
