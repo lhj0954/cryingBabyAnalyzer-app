@@ -711,6 +711,8 @@ public class MedicalRecordActivity extends AppCompatActivity {
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(28, 24, 28, 24);
         card.setBackgroundResource(R.drawable.bg_record_card);
+        card.setClickable(true);
+        card.setFocusable(true);
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -731,21 +733,31 @@ public class MedicalRecordActivity extends AppCompatActivity {
         if (memoTitle.length() > 24) {
             memoTitle = memoTitle.substring(0, 24) + "...";
         }
-        title.setText(memoTitle.equals("-") ? "특이사항 메모" : memoTitle);
+
+        String baseTitle = memoTitle.equals("-") ? "특이사항 메모" : memoTitle;
+        title.setText(baseTitle + "  ▼");
         title.setTextColor(0xFF2C3E50);
         title.setTextSize(18);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
-        title.setPadding(0, 8, 0, 8);
+        title.setPadding(0, 8, 0, 0);
 
         TextView detail = new TextView(this);
         detail.setText(buildSpecialNoteSummary(note));
         detail.setTextColor(0xFF34495E);
         detail.setTextSize(14);
         detail.setLineSpacing(0, 1.15f);
+        detail.setPadding(0, 16, 0, 0);
+        detail.setVisibility(View.GONE);
 
         card.addView(date);
         card.addView(title);
         card.addView(detail);
+
+        card.setOnClickListener(v -> {
+            boolean opening = detail.getVisibility() != View.VISIBLE;
+            detail.setVisibility(opening ? View.VISIBLE : View.GONE);
+            title.setText(baseTitle + (opening ? "  ▲" : "  ▼"));
+        });
 
         return card;
     }
