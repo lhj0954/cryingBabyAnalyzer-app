@@ -49,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private CryNotificationManager notificationManager;
 
     private boolean detectMode = false;
+    private int currentRecordId = -1;
 
     private final BroadcastReceiver resultReceiver = new BroadcastReceiver() {
         @Override
@@ -74,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
     private void updateResultUI() {
         if (!CryDetectionService.lastResultText.isEmpty()) {
             txtResult.setText(convertLabelToKorean(CryDetectionService.lastResultText));
+            currentRecordId = CryDetectionService.lastRecordId;
             btnFeedback.setVisibility(View.VISIBLE);
 
             if (switchBackground.isChecked()) {
@@ -146,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
         btnFeedback.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, FeedbackActivity.class);
             intent.putExtra("RESULT_TEXT", txtResult.getText().toString());
+            intent.putExtra("RECORD_ID", currentRecordId);
             startActivity(intent);
         });
 
@@ -277,9 +280,7 @@ public class MainActivity extends AppCompatActivity {
                                 confidence = response.prediction.confidence;
                             }
 
-                            txtResult.setText(convertLabelToKorean(label));
-                            btnFeedback.setVisibility(View.VISIBLE);
-
+                            currentRecordId = (response != null && response.record_id != null)\n                                    ? response.record_id\n                                    : -1;\n\n                            txtResult.setText(convertLabelToKorean(label));\n                            btnFeedback.setVisibility(View.VISIBLE);\n
                             if (response != null && response.prediction != null) {
                                 notificationManager.sendCryNotification(label, confidence);
                             }
