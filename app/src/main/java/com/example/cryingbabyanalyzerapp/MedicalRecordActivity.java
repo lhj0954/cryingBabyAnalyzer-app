@@ -13,8 +13,13 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -25,15 +30,19 @@ import java.util.Map;
 public class MedicalRecordActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "medical_questionnaire";
+    private static final String NOTES_KEY = "special_notes_json";
+    private static final String MIGRATED_KEY = "special_notes_migrated";
 
     private TextView tvSummary;
     private TextView tvEmpty;
-    private TextView tvQuestionnaireSaved;
-    private TextView tvSavedQuestionnaireSummary;
+    private TextView tvSpecialNoteStatus;
     private LinearLayout recordListContainer;
+    private LinearLayout specialNoteFormContainer;
+    private LinearLayout specialNoteListContainer;
     private Button btnRefresh;
-    private Button btnSaveQuestionnaire;
-    private Button btnLoadSavedQuestionnaire;
+    private Button btnToggleSpecialNoteForm;
+    private Button btnToggleSpecialNoteList;
+    private Button btnSaveSpecialNote;
 
     private EditText etAgeMonths;
     private EditText etBirthWeight;
@@ -58,6 +67,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
 
     private CryApiService apiService;
     private SharedPreferences prefs;
+    private final Gson gson = new Gson();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,11 +79,13 @@ public class MedicalRecordActivity extends AppCompatActivity {
         apiService = new CryApiService(BuildConfig.SERVER_IP);
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 
-        showSavedQuestionnaireSummary();
+        migrateOldQuestionnaireIfNeeded();
+        refreshSpecialNoteList();
 
         btnRefresh.setOnClickListener(v -> loadRecords());
-        btnSaveQuestionnaire.setOnClickListener(v -> saveQuestionnaire());
-        btnLoadSavedQuestionnaire.setOnClickListener(v -> loadSavedQuestionnaireIntoForm());
+        btnToggleSpecialNoteForm.setOnClickListener(v -> toggleSpecialNoteForm());
+        btnToggleSpecialNoteList.setOnClickListener(v -> toggleSpecialNoteList());
+        btnSaveSpecialNote.setOnClickListener(v -> saveSpecialNote());
 
         loadRecords();
     }
@@ -81,12 +93,16 @@ public class MedicalRecordActivity extends AppCompatActivity {
     private void bindViews() {
         tvSummary = findViewById(R.id.tvSummary);
         tvEmpty = findViewById(R.id.tvEmpty);
-        tvQuestionnaireSaved = findViewById(R.id.tvQuestionnaireSaved);
-        tvSavedQuestionnaireSummary = findViewById(R.id.tvSavedQuestionnaireSummary);
+        tvSpecialNoteStatus = findViewById(R.id.tvSpecialNoteStatus);
+
         recordListContainer = findViewById(R.id.recordListContainer);
+        specialNoteFormContainer = findViewById(R.id.specialNoteFormContainer);
+        specialNoteListContainer = findViewById(R.id.specialNoteListContainer);
+
         btnRefresh = findViewById(R.id.btnRefresh);
-        btnSaveQuestionnaire = findViewById(R.id.btnSaveQuestionnaire);
-        btnLoadSavedQuestionnaire = findViewById(R.id.btnLoadSavedQuestionnaire);
+        btnToggleSpecialNoteForm = findViewById(R.id.btnToggleSpecialNoteForm);
+        btnToggleSpecialNoteList = findViewById(R.id.btnToggleSpecialNoteList);
+        btnSaveSpecialNote = findViewById(R.id.btnSaveSpecialNote);
 
         etAgeMonths = findViewById(R.id.etAgeMonths);
         etBirthWeight = findViewById(R.id.etBirthWeight);
@@ -108,6 +124,18 @@ public class MedicalRecordActivity extends AppCompatActivity {
         cbLethargy = findViewById(R.id.cbLethargy);
         cbRash = findViewById(R.id.cbRash);
         cbConstipationOrBlood = findViewById(R.id.cbConstipationOrBlood);
+    }
+
+    private void toggleSpecialNoteForm() {
+        boolean willShow = specialNoteFormContainer.getVisibility() != View.VISIBLE;
+        specialNoteFormContainer.setVisibility(willShow ? View.VISIBLE : View.GONE);
+        btnToggleSpecialNoteForm.setText(willShow ? "특이사항 메모 작성 ▲" : "특이사항 메모 작성 ▼");
+    }
+
+    private void toggleSpecialNoteList() {
+        boolean willShow = specialNoteListContainer.getVisibility() != View.VISIBLE;
+        specialNoteListContainer.setVisibility(willShow ? View.VISIBLE : View.GONE);
+        updateSpecialNoteListButtonText();
     }
 
     private void loadRecords() {
@@ -303,146 +331,199 @@ public class MedicalRecordActivity extends AppCompatActivity {
         return confidenceText + " · " + durationText;
     }
 
-    private void saveQuestionnaire() {
-        SharedPreferences.Editor editor = prefs.edit();
+    private void saveSpecialNote() {
+        SpecialNote note = buildNoteFromForm();
+        List<SpecialNote> notes = getSpecialNotes();
 
-        editor.putString("age_months", etAgeMonths.getText().toString().trim());
-        editor.putString("birth_weight", etBirthWeight.getText().toString().trim());
-        editor.putString("feeds_per_day", etFeedsPerDay.getText().toString().trim());
-        editor.putString("wet_diapers", etWetDiapers.getText().toString().trim());
-        editor.putString("stool_count", etStoolCount.getText().toString().trim());
-        editor.putString("sleep_hours", etSleepHours.getText().toString().trim());
-        editor.putString("caregiver_memo", etCaregiverMemo.getText().toString().trim());
+        notes.add(0, note);
+        saveSpecialNotes(notes);
 
-        editor.putInt("feeding_type", rgFeedingType.getCheckedRadioButtonId());
+        clearSpecialNoteForm();
+        specialNoteFormContainer.setVisibility(View.GONE);
+        btnToggleSpecialNoteForm.setText("특이사항 메모 작성 ▼");
 
-        editor.putBoolean("preterm", cbPreterm.isChecked());
-        editor.putBoolean("feeding_decrease", cbFeedingDecrease.isChecked());
-        editor.putBoolean("hard_to_soothe", cbHardToSoothe.isChecked());
-        editor.putBoolean("fever", cbFever.isChecked());
-        editor.putBoolean("vomiting", cbVomiting.isChecked());
-        editor.putBoolean("diarrhea", cbDiarrhea.isChecked());
-        editor.putBoolean("breathing", cbBreathing.isChecked());
-        editor.putBoolean("lethargy", cbLethargy.isChecked());
-        editor.putBoolean("rash", cbRash.isChecked());
-        editor.putBoolean("constipation_or_blood", cbConstipationOrBlood.isChecked());
+        refreshSpecialNoteList();
+        specialNoteListContainer.setVisibility(View.VISIBLE);
+        updateSpecialNoteListButtonText();
 
-        editor.putLong("saved_at", System.currentTimeMillis());
-        editor.apply();
-
-        showSavedQuestionnaireSummary();
-        clearQuestionnaireForm();
-
-        tvQuestionnaireSaved.setText("저장 완료 · 아래 '저장된 문진 정보'에서 확인할 수 있습니다.");
-        Toast.makeText(this, "문진 정보를 저장했습니다.", Toast.LENGTH_SHORT).show();
+        tvSpecialNoteStatus.setText("저장 완료 · 특이사항 목록에 추가되었습니다.");
+        Toast.makeText(this, "특이사항 메모를 저장했습니다.", Toast.LENGTH_SHORT).show();
     }
 
-    private void showSavedQuestionnaireSummary() {
-        long savedAt = prefs.getLong("saved_at", 0L);
+    private SpecialNote buildNoteFromForm() {
+        SpecialNote note = new SpecialNote();
+        note.savedAt = System.currentTimeMillis();
+        note.ageMonths = etAgeMonths.getText().toString().trim();
+        note.birthWeight = etBirthWeight.getText().toString().trim();
+        note.feedsPerDay = etFeedsPerDay.getText().toString().trim();
+        note.wetDiapers = etWetDiapers.getText().toString().trim();
+        note.stoolCount = etStoolCount.getText().toString().trim();
+        note.sleepHours = etSleepHours.getText().toString().trim();
+        note.caregiverMemo = etCaregiverMemo.getText().toString().trim();
 
-        if (savedAt == 0L) {
-            tvSavedQuestionnaireSummary.setText("아직 저장된 문진 정보가 없습니다.");
-            btnLoadSavedQuestionnaire.setEnabled(false);
-            tvQuestionnaireSaved.setText("문진 정보는 이 기기에만 저장됩니다.");
-            return;
+        int feedingId = rgFeedingType.getCheckedRadioButtonId();
+        if (feedingId == R.id.rbBreast) {
+            note.feedingType = "모유";
+        } else if (feedingId == R.id.rbFormula) {
+            note.feedingType = "분유";
+        } else if (feedingId == R.id.rbMixed) {
+            note.feedingType = "혼합";
+        } else {
+            note.feedingType = "";
         }
 
-        btnLoadSavedQuestionnaire.setEnabled(true);
+        note.preterm = cbPreterm.isChecked();
+        note.feedingDecrease = cbFeedingDecrease.isChecked();
+        note.hardToSoothe = cbHardToSoothe.isChecked();
+        note.fever = cbFever.isChecked();
+        note.vomiting = cbVomiting.isChecked();
+        note.diarrhea = cbDiarrhea.isChecked();
+        note.breathing = cbBreathing.isChecked();
+        note.lethargy = cbLethargy.isChecked();
+        note.rash = cbRash.isChecked();
+        note.constipationOrBlood = cbConstipationOrBlood.isChecked();
 
-        String age = valueOrDash(prefs.getString("age_months", ""));
-        String birthWeight = valueOrDash(prefs.getString("birth_weight", ""));
-        String feeds = valueOrDash(prefs.getString("feeds_per_day", ""));
-        String sleep = valueOrDash(prefs.getString("sleep_hours", ""));
-        String wetDiapers = valueOrDash(prefs.getString("wet_diapers", ""));
-        String stoolCount = valueOrDash(prefs.getString("stool_count", ""));
-        String memo = valueOrDash(prefs.getString("caregiver_memo", ""));
+        return note;
+    }
 
-        String feedingType = "미입력";
-        int feedingTypeId = prefs.getInt("feeding_type", -1);
-        if (feedingTypeId == R.id.rbBreast) {
-            feedingType = "모유";
-        } else if (feedingTypeId == R.id.rbFormula) {
-            feedingType = "분유";
-        } else if (feedingTypeId == R.id.rbMixed) {
-            feedingType = "혼합";
+    private List<SpecialNote> getSpecialNotes() {
+        String json = prefs.getString(NOTES_KEY, "");
+        if (json == null || json.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        try {
+            Type type = new TypeToken<List<SpecialNote>>() {}.getType();
+            List<SpecialNote> notes = gson.fromJson(json, type);
+            return notes != null ? notes : new ArrayList<>();
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
+    }
+
+    private void saveSpecialNotes(List<SpecialNote> notes) {
+        prefs.edit().putString(NOTES_KEY, gson.toJson(notes)).apply();
+    }
+
+    private void refreshSpecialNoteList() {
+        List<SpecialNote> notes = getSpecialNotes();
+        specialNoteListContainer.removeAllViews();
+
+        if (notes.isEmpty()) {
+            TextView empty = new TextView(this);
+            empty.setText("아직 저장된 특이사항 메모가 없습니다.");
+            empty.setTextColor(0xFF95A5A6);
+            empty.setTextSize(14);
+            empty.setPadding(8, 18, 8, 18);
+            specialNoteListContainer.addView(empty);
+        } else {
+            for (SpecialNote note : notes) {
+                specialNoteListContainer.addView(createSpecialNoteView(note));
+            }
+        }
+
+        updateSpecialNoteListButtonText();
+    }
+
+    private void updateSpecialNoteListButtonText() {
+        int count = getSpecialNotes().size();
+        boolean opened = specialNoteListContainer.getVisibility() == View.VISIBLE;
+        btnToggleSpecialNoteList.setText(
+                "특이사항 목록 (" + count + ")" + (opened ? " ▲" : " ▼")
+        );
+    }
+
+    private View createSpecialNoteView(SpecialNote note) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(28, 24, 28, 24);
+        card.setBackgroundResource(R.drawable.bg_record_card);
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(0, 0, 0, 18);
+        card.setLayoutParams(params);
+
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.KOREA);
+
+        TextView date = new TextView(this);
+        date.setText(format.format(new Date(note.savedAt)));
+        date.setTextColor(0xFF7F8C8D);
+        date.setTextSize(13);
+
+        TextView title = new TextView(this);
+        String memoTitle = valueOrDash(note.caregiverMemo);
+        if (memoTitle.length() > 24) {
+            memoTitle = memoTitle.substring(0, 24) + "...";
+        }
+        title.setText(memoTitle.equals("-") ? "특이사항 메모" : memoTitle);
+        title.setTextColor(0xFF2C3E50);
+        title.setTextSize(18);
+        title.setTypeface(null, android.graphics.Typeface.BOLD);
+        title.setPadding(0, 8, 0, 8);
+
+        TextView detail = new TextView(this);
+        detail.setText(buildSpecialNoteSummary(note));
+        detail.setTextColor(0xFF34495E);
+        detail.setTextSize(14);
+        detail.setLineSpacing(0, 1.15f);
+
+        card.addView(date);
+        card.addView(title);
+        card.addView(detail);
+
+        return card;
+    }
+
+    private String buildSpecialNoteSummary(SpecialNote note) {
+        StringBuilder observations = new StringBuilder();
+        appendCheckedItem(observations, note.preterm, "미숙아 출생");
+        appendCheckedItem(observations, note.feedingDecrease, "수유량/횟수 감소");
+        appendCheckedItem(observations, note.hardToSoothe, "평소보다 달래기 어려움");
+        if (observations.length() == 0) {
+            observations.append("체크된 특이사항 없음");
         }
 
         StringBuilder symptoms = new StringBuilder();
-        appendCheckedItem(symptoms, prefs.getBoolean("fever", false), "발열");
-        appendCheckedItem(symptoms, prefs.getBoolean("vomiting", false), "구토");
-        appendCheckedItem(symptoms, prefs.getBoolean("diarrhea", false), "설사");
-        appendCheckedItem(symptoms, prefs.getBoolean("breathing", false), "호흡 변화");
-        appendCheckedItem(symptoms, prefs.getBoolean("lethargy", false), "처짐/반응 저하");
-        appendCheckedItem(symptoms, prefs.getBoolean("rash", false), "발진");
-        appendCheckedItem(symptoms, prefs.getBoolean("constipation_or_blood", false), "심한 변비/혈변 의심");
-
+        appendCheckedItem(symptoms, note.fever, "발열");
+        appendCheckedItem(symptoms, note.vomiting, "구토");
+        appendCheckedItem(symptoms, note.diarrhea, "설사");
+        appendCheckedItem(symptoms, note.breathing, "호흡 변화");
+        appendCheckedItem(symptoms, note.lethargy, "처짐/반응 저하");
+        appendCheckedItem(symptoms, note.rash, "발진");
+        appendCheckedItem(symptoms, note.constipationOrBlood, "심한 변비/혈변 의심");
         if (symptoms.length() == 0) {
-            symptoms.append("체크된 항목 없음");
+            symptoms.append("체크된 동반 증상 없음");
         }
 
-        StringBuilder observations = new StringBuilder();
-        appendCheckedItem(observations, prefs.getBoolean("preterm", false), "미숙아 출생");
-        appendCheckedItem(observations, prefs.getBoolean("feeding_decrease", false), "최근 수유량/횟수 감소");
-        appendCheckedItem(observations, prefs.getBoolean("hard_to_soothe", false), "평소보다 달래기 어려움");
+        String age = valueOrDash(note.ageMonths);
+        String birthWeight = valueOrDash(note.birthWeight);
+        String feeding = valueOrDash(note.feedingType);
+        String feeds = valueOrDash(note.feedsPerDay);
+        String sleep = valueOrDash(note.sleepHours);
+        String wet = valueOrDash(note.wetDiapers);
+        String stool = valueOrDash(note.stoolCount);
+        String memo = valueOrDash(note.caregiverMemo);
 
-        if (observations.length() == 0) {
-            observations.append("체크된 항목 없음");
-        }
-
-        SimpleDateFormat displayFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.KOREA);
-
-        String summary = "마지막 저장: " + displayFormat.format(new Date(savedAt)) + "\n\n"
-                + "[기본 정보]\n"
+        return "[기본 정보]\n"
                 + "생후 개월 수: " + age + "\n"
                 + "출생체중: " + (birthWeight.equals("-") ? "-" : birthWeight + " g") + "\n"
                 + "특이사항: " + observations + "\n\n"
                 + "[수유 · 수면 · 배변]\n"
-                + "수유 형태: " + feedingType + "\n"
+                + "수유 형태: " + feeding + "\n"
                 + "하루 수유 횟수: " + feeds + "\n"
                 + "하루 수면시간: " + (sleep.equals("-") ? "-" : sleep + "시간") + "\n"
-                + "젖은 기저귀: " + wetDiapers + "회\n"
-                + "대변: " + stoolCount + "회\n\n"
+                + "젖은 기저귀: " + (wet.equals("-") ? "-" : wet + "회") + "\n"
+                + "대변: " + (stool.equals("-") ? "-" : stool + "회") + "\n\n"
                 + "[최근 동반 증상]\n"
                 + symptoms + "\n\n"
                 + "[보호자 메모]\n"
                 + memo;
-
-        tvSavedQuestionnaireSummary.setText(summary);
-        tvQuestionnaireSaved.setText("마지막 저장: " + displayFormat.format(new Date(savedAt)));
     }
 
-    private void loadSavedQuestionnaireIntoForm() {
-        etAgeMonths.setText(prefs.getString("age_months", ""));
-        etBirthWeight.setText(prefs.getString("birth_weight", ""));
-        etFeedsPerDay.setText(prefs.getString("feeds_per_day", ""));
-        etWetDiapers.setText(prefs.getString("wet_diapers", ""));
-        etStoolCount.setText(prefs.getString("stool_count", ""));
-        etSleepHours.setText(prefs.getString("sleep_hours", ""));
-        etCaregiverMemo.setText(prefs.getString("caregiver_memo", ""));
-
-        int feedingTypeId = prefs.getInt("feeding_type", -1);
-        if (feedingTypeId != -1) {
-            rgFeedingType.check(feedingTypeId);
-        } else {
-            rgFeedingType.clearCheck();
-        }
-
-        cbPreterm.setChecked(prefs.getBoolean("preterm", false));
-        cbFeedingDecrease.setChecked(prefs.getBoolean("feeding_decrease", false));
-        cbHardToSoothe.setChecked(prefs.getBoolean("hard_to_soothe", false));
-        cbFever.setChecked(prefs.getBoolean("fever", false));
-        cbVomiting.setChecked(prefs.getBoolean("vomiting", false));
-        cbDiarrhea.setChecked(prefs.getBoolean("diarrhea", false));
-        cbBreathing.setChecked(prefs.getBoolean("breathing", false));
-        cbLethargy.setChecked(prefs.getBoolean("lethargy", false));
-        cbRash.setChecked(prefs.getBoolean("rash", false));
-        cbConstipationOrBlood.setChecked(prefs.getBoolean("constipation_or_blood", false));
-
-        tvQuestionnaireSaved.setText("저장된 문진 정보를 입력칸에 불러왔습니다. 수정 후 다시 저장하세요.");
-        Toast.makeText(this, "저장된 문진을 불러왔습니다.", Toast.LENGTH_SHORT).show();
-    }
-
-    private void clearQuestionnaireForm() {
+    private void clearSpecialNoteForm() {
         etAgeMonths.setText("");
         etBirthWeight.setText("");
         etFeedsPerDay.setText("");
@@ -463,6 +544,56 @@ public class MedicalRecordActivity extends AppCompatActivity {
         cbLethargy.setChecked(false);
         cbRash.setChecked(false);
         cbConstipationOrBlood.setChecked(false);
+
+        etCaregiverMemo.clearFocus();
+    }
+
+    private void migrateOldQuestionnaireIfNeeded() {
+        if (prefs.getBoolean(MIGRATED_KEY, false)) {
+            return;
+        }
+
+        List<SpecialNote> notes = getSpecialNotes();
+        long oldSavedAt = prefs.getLong("saved_at", 0L);
+
+        if (notes.isEmpty() && oldSavedAt > 0L) {
+            SpecialNote note = new SpecialNote();
+            note.savedAt = oldSavedAt;
+            note.ageMonths = prefs.getString("age_months", "");
+            note.birthWeight = prefs.getString("birth_weight", "");
+            note.feedsPerDay = prefs.getString("feeds_per_day", "");
+            note.wetDiapers = prefs.getString("wet_diapers", "");
+            note.stoolCount = prefs.getString("stool_count", "");
+            note.sleepHours = prefs.getString("sleep_hours", "");
+            note.caregiverMemo = prefs.getString("caregiver_memo", "");
+
+            int oldFeedingId = prefs.getInt("feeding_type", -1);
+            if (oldFeedingId == R.id.rbBreast) {
+                note.feedingType = "모유";
+            } else if (oldFeedingId == R.id.rbFormula) {
+                note.feedingType = "분유";
+            } else if (oldFeedingId == R.id.rbMixed) {
+                note.feedingType = "혼합";
+            } else {
+                note.feedingType = "";
+            }
+
+            note.preterm = prefs.getBoolean("preterm", false);
+            note.feedingDecrease = prefs.getBoolean("feeding_decrease", false);
+            note.hardToSoothe = prefs.getBoolean("hard_to_soothe", false);
+            note.fever = prefs.getBoolean("fever", false);
+            note.vomiting = prefs.getBoolean("vomiting", false);
+            note.diarrhea = prefs.getBoolean("diarrhea", false);
+            note.breathing = prefs.getBoolean("breathing", false);
+            note.lethargy = prefs.getBoolean("lethargy", false);
+            note.rash = prefs.getBoolean("rash", false);
+            note.constipationOrBlood = prefs.getBoolean("constipation_or_blood", false);
+
+            notes.add(note);
+            saveSpecialNotes(notes);
+        }
+
+        prefs.edit().putBoolean(MIGRATED_KEY, true).apply();
     }
 
     private void appendCheckedItem(StringBuilder builder, boolean checked, String text) {
@@ -492,5 +623,28 @@ public class MedicalRecordActivity extends AppCompatActivity {
         if (lower.contains("sleepy")) return "졸림";
 
         return input;
+    }
+
+    private static class SpecialNote {
+        long savedAt;
+        String ageMonths;
+        String birthWeight;
+        String feedingType;
+        String feedsPerDay;
+        String sleepHours;
+        String wetDiapers;
+        String stoolCount;
+        String caregiverMemo;
+
+        boolean preterm;
+        boolean feedingDecrease;
+        boolean hardToSoothe;
+        boolean fever;
+        boolean vomiting;
+        boolean diarrhea;
+        boolean breathing;
+        boolean lethargy;
+        boolean rash;
+        boolean constipationOrBlood;
     }
 }
