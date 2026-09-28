@@ -61,13 +61,19 @@ public class CryNotificationManager {
         }
     }
 
-    // 외부(MainActivity 및 CryDetectionService)에서 알림을 보낼 때 호출하는 메서드
+    // 기존 호출 호환
     public void sendCryNotification(String label, float confidence) {
+        sendCryNotification(label, confidence, -1);
+    }
+
+    // 울음 분석 결과와 recordId를 알림 화면에 전달
+    public void sendCryNotification(String label, float confidence, int recordId) {
         // 1. 인텐트 설정
         Intent intent = new Intent(context, AlertActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.putExtra("label", label);
         intent.putExtra("confidence", confidence);
+        intent.putExtra("RECORD_ID", recordId);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 context,
@@ -89,6 +95,16 @@ public class CryNotificationManager {
         // 💡 [수정] 복잡한 수치(Confidence) 및 영어 라벨을 없애고 직관적인 한국어 문구만 표시되도록 수정
         String contentText = convertLabelToKorean(label);
 
+        Intent stopSoothingIntent = new Intent(context, SoothingStopReceiver.class);
+        stopSoothingIntent.setAction(SoothingStopReceiver.ACTION_STOP_SOOTHING);
+
+        PendingIntent stopSoothingPendingIntent = PendingIntent.getBroadcast(
+                context,
+                2,
+                stopSoothingIntent,
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+        );
+
         // 3. 알림 디자인 및 설정
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
@@ -100,6 +116,11 @@ public class CryNotificationManager {
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setFullScreenIntent(pendingIntent, true)
                 .setContentIntent(pendingIntent)
+                .addAction(
+                        android.R.drawable.ic_media_pause,
+                        "울음 완화 중지",
+                        stopSoothingPendingIntent
+                )
                 .setAutoCancel(true);
 
         // 4. 알림 전송 (권한 재확인)
