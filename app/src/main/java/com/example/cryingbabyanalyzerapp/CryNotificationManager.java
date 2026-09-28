@@ -116,12 +116,15 @@ public class CryNotificationManager {
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setFullScreenIntent(pendingIntent, true)
                 .setContentIntent(pendingIntent)
-                .addAction(
-                        android.R.drawable.ic_media_pause,
-                        "울음 완화 중지",
-                        stopSoothingPendingIntent
-                )
                 .setAutoCancel(true);
+
+        if (SoothingAudioManager.isPlaying()) {
+            builder.addAction(
+                    android.R.drawable.ic_media_pause,
+                    "울음 완화 중지",
+                    stopSoothingPendingIntent
+            );
+        }
 
         // 4. 알림 전송 (권한 재확인)
         if (notificationManager != null) {
