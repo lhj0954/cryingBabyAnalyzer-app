@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Button btnDetect;
     private Button btnFeedback;
+    private Button btnSoothingSettings;
     private TextView txtStatus;
     private TextView txtResult;
     private Switch switchBackground;
@@ -91,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnDetect = findViewById(R.id.btnDetect);
         btnFeedback = findViewById(R.id.btnFeedback);
+        btnSoothingSettings = findViewById(R.id.btnSoothingSettings);
         txtStatus = findViewById(R.id.txtStatus);
         txtResult = findViewById(R.id.txtResult);
         switchBackground = findViewById(R.id.switchBackground);
@@ -151,6 +153,10 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("RECORD_ID", currentRecordId);
             startActivity(intent);
         });
+
+        btnSoothingSettings.setOnClickListener(v ->
+                startActivity(new Intent(MainActivity.this, SoothingSettingsActivity.class))
+        );
 
         switchBackground.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (!hasRequiredPermissions()) {
@@ -288,7 +294,12 @@ public class MainActivity extends AppCompatActivity {
                             btnFeedback.setVisibility(View.VISIBLE);
 
                             if (response != null && response.prediction != null) {
-                                notificationManager.sendCryNotification(label, confidence);
+                                SoothingAudioManager.playIfAutoEnabled(MainActivity.this);
+                                notificationManager.sendCryNotification(
+                                        label,
+                                        confidence,
+                                        currentRecordId
+                                );
                             }
                         });
                     }
