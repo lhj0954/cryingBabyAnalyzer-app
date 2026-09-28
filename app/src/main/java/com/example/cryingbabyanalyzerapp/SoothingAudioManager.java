@@ -104,10 +104,10 @@ public final class SoothingAudioManager {
                 stop();
                 return true;
             });
-            player.prepare();
-            player.start();
 
             mediaPlayer = player;
+            player.prepare();
+            player.start();
 
             int durationSeconds = getDurationSeconds(appContext);
             stopRunnable = SoothingAudioManager::stop;
