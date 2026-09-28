@@ -311,7 +311,22 @@ public class CryDetectionService extends Service {
 
                                     /*
                                      * =================================================
-                                     * 5. 알림은 딱 한 번만 전송
+                                     * 5. 설정되어 있으면 울음 완화 음원 자동 재생
+                                     * =================================================
+                                     */
+                                    if (response != null &&
+                                            response.prediction != null) {
+
+                                        SoothingAudioManager
+                                                .playIfAutoEnabled(
+                                                        CryDetectionService.this
+                                                );
+                                    }
+
+
+                                    /*
+                                     * =================================================
+                                     * 6. 알림은 딱 한 번만 전송
                                      * =================================================
                                      */
                                     if (response != null &&
@@ -321,14 +336,15 @@ public class CryDetectionService extends Service {
                                         notificationManager
                                                 .sendCryNotification(
                                                         label,
-                                                        confidence
+                                                        confidence,
+                                                        lastRecordId
                                                 );
                                     }
 
 
                                     /*
                                      * =================================================
-                                     * 6. 분석 완료
+                                     * 7. 분석 완료
                                      * =================================================
                                      */
                                     isProcessing.set(false);
@@ -336,7 +352,7 @@ public class CryDetectionService extends Service {
 
                                     /*
                                      * =================================================
-                                     * 7. 여기서부터 30초 Cooldown 시작
+                                     * 8. 여기서부터 Cooldown 시작
                                      * =================================================
                                      *
                                      * 서버 결과가 나온 순간부터 30초입니다.
@@ -457,8 +473,20 @@ public class CryDetectionService extends Service {
 
 
         /*
-         * 30초 후 실행
+         * 자동 재생 중에는 기기 스피커 소리를 다시 울음으로 오인하지 않도록
+         * 완화 음원 재생 시간만큼 감지를 쉬게 합니다.
          */
+        long cooldownDelayMs = COOLDOWN_MS;
+
+        if (SoothingAudioManager.isAutoPlayEnabled(this)
+                && SoothingAudioManager.hasSelectedAudio(this)) {
+
+            cooldownDelayMs = Math.max(
+                    COOLDOWN_MS,
+                    SoothingAudioManager.getDurationSeconds(this) * 1000L
+            );
+        }
+
         android.os.Handler handler =
                 new android.os.Handler(
                         android.os.Looper.getMainLooper()
@@ -466,7 +494,7 @@ public class CryDetectionService extends Service {
 
         handler.postDelayed(
                 cooldownRunnable,
-                COOLDOWN_MS
+                cooldownDelayMs
         );
     }
 
