@@ -34,6 +34,7 @@ public class AlertActivity extends AppCompatActivity {
     private boolean flashOn = false;
 
     private String label;
+    private int recordId = -1;
 
     /*
      * 플래시 반복 Runnable
