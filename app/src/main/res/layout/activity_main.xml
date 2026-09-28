@@ -23,6 +23,21 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSoothingSettings"
+        android:layout_width="wrap_content"
+        android:layout_height="44dp"
+        android:layout_marginTop="14dp"
+        android:layout_marginEnd="16dp"
+        android:backgroundTint="#5B8DEF"
+        android:text="울음 완화 설정"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        app:cornerRadius="22dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <FrameLayout
         android:id="@+id/layoutMicContainer"
         android:layout_width="320dp"
