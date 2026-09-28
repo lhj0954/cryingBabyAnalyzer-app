@@ -44,6 +44,13 @@
             android:exported="true" />
         <activity android:name=".FeedbackActivity" />
         <activity android:name=".MedicalRecordActivity" />
+        <activity
+            android:name=".SoothingSettingsActivity"
+            android:exported="false" />
+
+        <receiver
+            android:name=".SoothingStopReceiver"
+            android:exported="false" />
 
     </application>
 
