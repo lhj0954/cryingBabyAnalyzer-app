@@ -231,7 +231,7 @@ public class MainActivity extends AppCompatActivity {
         // YAMNet 시작 실패 시 감지 효과도 시작하지 않습니다.
         if (!yamnetMonitor.isRunning()) {
             detectMode = false;
-            resetDetectionProgress();
+            stopDetectionChargingEffect();
             return;
         }
 
