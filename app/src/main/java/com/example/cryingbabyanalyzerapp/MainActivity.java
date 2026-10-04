@@ -11,6 +11,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Switch;
@@ -32,6 +33,9 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQ_RECORD_AUDIO = 1001;
 
+    // 홈 화면의 수동 울음 감지 시간: 10초
+    private static final long MANUAL_DETECTION_DURATION_MS = 10_000L;
+
     private Button btnDetect;
     private Button btnFeedback;
     private Button btnSoothingSettings;
@@ -51,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean detectMode = false;
     private int currentRecordId = -1;
+    private CountDownTimer detectionTimer;
 
     private final BroadcastReceiver resultReceiver = new BroadcastReceiver() {
         @Override
@@ -115,6 +120,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCryDetected() {
                 txtStatus.post(() -> {
+                    // 10초 제한이 끝난 뒤 race condition으로 늦게 들어온 콜백은 무시합니다.
+                    if (!detectMode) return;
+
+                    // 울음을 찾은 순간부터는 더 이상 실시간 감지를 하지 않고 서버 분석만 진행합니다.
+                    stopDetectMode();
                     txtStatus.setText("아기 울음소리 확인 완료. 사유 분석 중...");
                     txtResult.setText("");
                 });
@@ -201,14 +211,59 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startDetectMode() {
+        // 중복 타이머 방지
+        if (detectionTimer != null) {
+            detectionTimer.cancel();
+            detectionTimer = null;
+        }
+
         detectMode = true;
-        txtStatus.setText("아기 울음소리 확인 중...");
+        txtStatus.setText("울음소리 감지 중... 10초 남음");
+
         yamnetMonitor.start();
+
+        // YAMNet 시작 실패 시 타이머/이펙트를 시작하지 않습니다.
+        if (!yamnetMonitor.isRunning()) {
+            detectMode = false;
+            return;
+        }
+
         startRippleAnimation();
+
+        // 버튼을 누른 순간부터 정확히 10초 동안만 수동 감지를 유지합니다.
+        detectionTimer = new CountDownTimer(
+                MANUAL_DETECTION_DURATION_MS,
+                1000L
+        ) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                if (!detectMode) return;
+
+                long secondsLeft = (millisUntilFinished + 999L) / 1000L;
+                txtStatus.setText("울음소리 감지 중... " + secondsLeft + "초 남음");
+            }
+
+            @Override
+            public void onFinish() {
+                detectionTimer = null;
+
+                if (!detectMode) return;
+
+                // 10초가 되면 YAMNet + 마이크 감지를 완전히 종료하고 ripple도 제거합니다.
+                stopDetectMode();
+                txtStatus.setText("10초 감지가 끝났습니다. 다시 감지하려면 마이크를 눌러주세요.");
+            }
+        }.start();
     }
 
     private void stopDetectMode() {
         detectMode = false;
+
+        if (detectionTimer != null) {
+            detectionTimer.cancel();
+            detectionTimer = null;
+        }
+
         txtStatus.setText("마이크 버튼을 눌러보세요!");
         yamnetMonitor.stop();
         stopRippleAnimation();
@@ -392,6 +447,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        if (detectionTimer != null) {
+            detectionTimer.cancel();
+            detectionTimer = null;
+        }
+
         super.onDestroy();
         if (yamnetMonitor != null) {
             yamnetMonitor.stop();
