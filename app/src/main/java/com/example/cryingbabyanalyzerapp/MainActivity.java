@@ -24,6 +24,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.progressindicator.CircularProgressIndicator;
 
 import java.io.File;
 import java.util.Locale;
@@ -43,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView txtResult;
     private Switch switchBackground;
     private BottomNavigationView bottomNavigationView;
+    private CircularProgressIndicator detectionProgress;
 
     private View viewRipple1;
     private View viewRipple2;
@@ -102,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
         txtResult = findViewById(R.id.txtResult);
         switchBackground = findViewById(R.id.switchBackground);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
+        detectionProgress = findViewById(R.id.detectionProgress);
 
         viewRipple1 = findViewById(R.id.viewRipple1);
         viewRipple2 = findViewById(R.id.viewRipple2);
@@ -218,29 +221,33 @@ public class MainActivity extends AppCompatActivity {
         }
 
         detectMode = true;
-        txtStatus.setText("울음소리 감지 중... 10초 남음");
 
         yamnetMonitor.start();
 
-        // YAMNet 시작 실패 시 타이머/이펙트를 시작하지 않습니다.
+        // YAMNet 시작 실패 시 감지 효과도 시작하지 않습니다.
         if (!yamnetMonitor.isRunning()) {
             detectMode = false;
+            resetDetectionProgress();
             return;
         }
 
-        startRippleAnimation();
+        startDetectionChargingEffect();
 
-        // 버튼을 누른 순간부터 정확히 10초 동안만 수동 감지를 유지합니다.
+        // 버튼을 누른 순간부터 10초 동안만 수동 감지를 유지합니다.
         detectionTimer = new CountDownTimer(
                 MANUAL_DETECTION_DURATION_MS,
-                1000L
+                100L
         ) {
             @Override
             public void onTick(long millisUntilFinished) {
                 if (!detectMode) return;
 
-                long secondsLeft = (millisUntilFinished + 999L) / 1000L;
-                txtStatus.setText("울음소리 감지 중... " + secondsLeft + "초 남음");
+                // 10초 동안 0 -> 100%로 원형 게이지를 채웁니다.
+                int progress = (int) (
+                        100f * (MANUAL_DETECTION_DURATION_MS - millisUntilFinished)
+                                / MANUAL_DETECTION_DURATION_MS
+                );
+                detectionProgress.setProgress(Math.min(progress, 100));
             }
 
             @Override
@@ -249,7 +256,8 @@ public class MainActivity extends AppCompatActivity {
 
                 if (!detectMode) return;
 
-                // 10초가 되면 YAMNet + 마이크 감지를 완전히 종료하고 ripple도 제거합니다.
+                // 정확히 10초가 되면 감지를 종료하고 게이지를 초기화합니다.
+                detectionProgress.setProgress(100);
                 stopDetectMode();
                 txtStatus.setText("10초 감지가 끝났습니다. 다시 감지하려면 마이크를 눌러주세요.");
             }
@@ -266,59 +274,31 @@ public class MainActivity extends AppCompatActivity {
 
         txtStatus.setText("마이크 버튼을 눌러보세요!");
         yamnetMonitor.stop();
-        stopRippleAnimation();
+        stopDetectionChargingEffect();
     }
 
+    private void startDetectionChargingEffect() {
+        if (detectionProgress == null) return;
+
+        detectionProgress.setVisibility(View.VISIBLE);
+        detectionProgress.setIndeterminate(false);
+        detectionProgress.setProgress(0);
+    }
+
+    private void stopDetectionChargingEffect() {
+        if (detectionProgress == null) return;
+
+        detectionProgress.setVisibility(View.INVISIBLE);
+        detectionProgress.setProgress(0);
+    }
+
+    // 기존 ripple 효과는 원형 충전 게이지가 감지 시간을 표현하므로 사용하지 않습니다.
     private void startRippleAnimation() {
-        if (viewRipple1 == null || viewRipple2 == null) return;
-
-        viewRipple1.setVisibility(View.VISIBLE);
-        viewRipple2.setVisibility(View.VISIBLE);
-
-        ObjectAnimator scaleX1 = ObjectAnimator.ofFloat(viewRipple1, "scaleX", 1.0f, 1.4f);
-        ObjectAnimator scaleY1 = ObjectAnimator.ofFloat(viewRipple1, "scaleY", 1.0f, 1.4f);
-        ObjectAnimator alpha1 = ObjectAnimator.ofFloat(viewRipple1, "alpha", 1.0f, 0.0f);
-
-        scaleX1.setRepeatCount(ValueAnimator.INFINITE);
-        scaleY1.setRepeatCount(ValueAnimator.INFINITE);
-        alpha1.setRepeatCount(ValueAnimator.INFINITE);
-
-        rippleAnimatorSet1 = new AnimatorSet();
-        rippleAnimatorSet1.playTogether(scaleX1, scaleY1, alpha1);
-        rippleAnimatorSet1.setDuration(1800);
-        rippleAnimatorSet1.start();
-
-        ObjectAnimator scaleX2 = ObjectAnimator.ofFloat(viewRipple2, "scaleX", 1.0f, 1.4f);
-        ObjectAnimator scaleY2 = ObjectAnimator.ofFloat(viewRipple2, "scaleY", 1.0f, 1.4f);
-        ObjectAnimator alpha2 = ObjectAnimator.ofFloat(viewRipple2, "alpha", 1.0f, 0.0f);
-
-        scaleX2.setRepeatCount(ValueAnimator.INFINITE);
-        scaleY2.setRepeatCount(ValueAnimator.INFINITE);
-        alpha2.setRepeatCount(ValueAnimator.INFINITE);
-
-        rippleAnimatorSet2 = new AnimatorSet();
-        rippleAnimatorSet2.playTogether(scaleX2, scaleY2, alpha2);
-        rippleAnimatorSet2.setDuration(1800);
-        rippleAnimatorSet2.setStartDelay(900);
-        rippleAnimatorSet2.start();
+        startDetectionChargingEffect();
     }
 
     private void stopRippleAnimation() {
-        if (rippleAnimatorSet1 != null) rippleAnimatorSet1.cancel();
-        if (rippleAnimatorSet2 != null) rippleAnimatorSet2.cancel();
-
-        if (viewRipple1 != null) {
-            viewRipple1.setVisibility(View.INVISIBLE);
-            viewRipple1.setScaleX(1.0f);
-            viewRipple1.setScaleY(1.0f);
-            viewRipple1.setAlpha(1.0f);
-        }
-        if (viewRipple2 != null) {
-            viewRipple2.setVisibility(View.INVISIBLE);
-            viewRipple2.setScaleX(1.0f);
-            viewRipple2.setScaleY(1.0f);
-            viewRipple2.setAlpha(1.0f);
-        }
+        stopDetectionChargingEffect();
     }
 
     private void requestPrediction() {
