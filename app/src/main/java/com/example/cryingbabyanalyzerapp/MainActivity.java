@@ -122,16 +122,20 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onCryDetected() {
+                // 10초 제한이 이미 끝난 뒤 들어온 늦은 콜백은 완전히 무시합니다.
+                if (!detectMode) return;
+
                 txtStatus.post(() -> {
-                    // 10초 제한이 끝난 뒤 race condition으로 늦게 들어온 콜백은 무시합니다.
+                    // 메인 스레드에서 실행되기 전 10초 제한이 끝났다면 분석 요청도 하지 않습니다.
                     if (!detectMode) return;
 
                     // 울음을 찾은 순간부터는 더 이상 실시간 감지를 하지 않고 서버 분석만 진행합니다.
                     stopDetectMode();
                     txtStatus.setText("아기 울음소리 확인 완료. 사유 분석 중...");
                     txtResult.setText("");
+
+                    requestPrediction();
                 });
-                requestPrediction();
             }
 
             @Override
