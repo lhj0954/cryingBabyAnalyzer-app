@@ -63,6 +63,19 @@
             android:background="@drawable/bg_ripple_circle"
             android:visibility="invisible" />
 
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/detectionProgress"
+            android:layout_width="260dp"
+            android:layout_height="260dp"
+            android:layout_gravity="center"
+            android:visibility="invisible"
+            android:max="100"
+            android:progress="0"
+            app:indicatorColor="#FF7A85"
+            app:indicatorSize="260dp"
+            app:trackColor="#22FF7A85"
+            app:trackThickness="8dp" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDetect"
             android:layout_width="220dp"
