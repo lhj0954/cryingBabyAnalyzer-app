@@ -368,6 +368,8 @@ public class CryDetectionService extends Service {
                                                 .sendCryNotification(
                                                         label,
                                                         confidence,
+                                                        secondaryLabel,
+                                                        secondaryConfidence,
                                                         lastRecordId
                                                 );
                                     }
