@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 public class MedicalRecordActivity extends AppCompatActivity {
 
@@ -75,7 +76,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
     private CheckBox cbRash;
     private CheckBox cbConstipationOrBlood;
 
-    private CryApiService apiService;
+    private LocalCryRecordStore localRecordStore;
     private SharedPreferences prefs;
     private final Gson gson = new Gson();
 
@@ -86,7 +87,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
 
         bindViews();
 
-        apiService = new CryApiService(BuildConfig.SERVER_IP);
+        localRecordStore = new LocalCryRecordStore(this);
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 
         migrateOldQuestionnaireIfNeeded();
@@ -209,7 +210,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
         if (bottomNavigationView != null) {
             bottomNavigationView.setSelectedItemId(R.id.nav_medical_record);
         }
-        if (apiService != null) {
+        if (localRecordStore != null) {
             loadRecords();
         }
     }
@@ -258,26 +259,28 @@ public class MedicalRecordActivity extends AppCompatActivity {
     }
 
     private void loadRecords() {
-        tvSummary.setText("울음 기록을 정리하는 중...");
+        tvSummary.setText("태블릿에 저장된 울음 기록을 정리하는 중...");
         tvEmpty.setVisibility(View.GONE);
         recordListContainer.removeAllViews();
 
-        apiService.getRecords(new CryApiService.RecordsCallback() {
-            @Override
-            public void onSuccess(List<CryApiService.CryRecord> records) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                List<CryApiService.CryRecord> records = localRecordStore.listRecords();
+
                 runOnUiThread(() -> {
                     allRecords = records != null ? records : new ArrayList<>();
                     applyRecordFilters();
                 });
-            }
-
-            @Override
-            public void onFailure(String message) {
+            } catch (Exception e) {
                 runOnUiThread(() -> {
-                    tvSummary.setText("울음 기록 조회 실패: " + message);
+                    tvSummary.setText("태블릿 울음 기록을 불러오지 못했습니다.");
                     tvEmpty.setVisibility(View.VISIBLE);
-                    tvEmpty.setText("서버에서 진료용 기록을 불러오지 못했습니다.");
-                    Toast.makeText(MedicalRecordActivity.this, message, Toast.LENGTH_SHORT).show();
+                    tvEmpty.setText("기기에 저장된 기록을 확인하지 못했습니다.");
+                    Toast.makeText(
+                            MedicalRecordActivity.this,
+                            "로컬 기록 조회 실패",
+                            Toast.LENGTH_SHORT
+                    ).show();
                 });
             }
         });
