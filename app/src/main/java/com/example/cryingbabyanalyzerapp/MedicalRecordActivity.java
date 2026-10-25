@@ -2,7 +2,9 @@ package com.example.cryingbabyanalyzerapp;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -21,6 +23,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import java.io.File;
 import java.lang.reflect.Type;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -49,8 +52,11 @@ public class MedicalRecordActivity extends AppCompatActivity {
     private Button btnToggleSpecialNoteForm;
     private Button btnToggleSpecialNoteList;
     private Button btnSaveSpecialNote;
-    private Spinner spinnerPeriod;
+    private Button btnPrevDate;
+    private Button btnNextDate;
     private Spinner spinnerLabel;
+    private TextView tvSelectedDate;
+    private LinearLayout dateNavigationCard;
     private BottomNavigationView bottomNavigationView;
 
     private List<CryApiService.CryRecord> allRecords = new ArrayList<>();
@@ -80,6 +86,11 @@ public class MedicalRecordActivity extends AppCompatActivity {
     private SharedPreferences prefs;
     private final Gson gson = new Gson();
 
+    private final Calendar selectedDate = Calendar.getInstance();
+    private float dateTouchDownX = 0f;
+    private MediaPlayer activePlayer;
+    private Button activePlaybackButton;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,6 +104,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
         migrateOldQuestionnaireIfNeeded();
         refreshSpecialNoteList();
         setupRecordFilters();
+        setupDateNavigation();
         setupBottomNavigation();
 
         btnRefresh.setOnClickListener(v -> loadRecords());
@@ -114,8 +126,11 @@ public class MedicalRecordActivity extends AppCompatActivity {
         btnToggleSpecialNoteForm = findViewById(R.id.btnToggleSpecialNoteForm);
         btnToggleSpecialNoteList = findViewById(R.id.btnToggleSpecialNoteList);
         btnSaveSpecialNote = findViewById(R.id.btnSaveSpecialNote);
-        spinnerPeriod = findViewById(R.id.spinnerPeriod);
+        btnPrevDate = findViewById(R.id.btnPrevDate);
+        btnNextDate = findViewById(R.id.btnNextDate);
         spinnerLabel = findViewById(R.id.spinnerLabel);
+        tvSelectedDate = findViewById(R.id.tvSelectedDate);
+        dateNavigationCard = findViewById(R.id.dateNavigationCard);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
         etAgeMonths = findViewById(R.id.etAgeMonths);
@@ -216,16 +231,6 @@ public class MedicalRecordActivity extends AppCompatActivity {
     }
 
     private void setupRecordFilters() {
-        String[] periods = {"오늘", "최근 7일", "최근 30일"};
-        ArrayAdapter<String> periodAdapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_item,
-                periods
-        );
-        periodAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerPeriod.setAdapter(periodAdapter);
-        spinnerPeriod.setSelection(1);
-
         String[] labels = {
                 "전체 원인",
                 "배고픔",
@@ -235,6 +240,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
                 "불편함",
                 "깸"
         };
+
         ArrayAdapter<String> labelAdapter = new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_spinner_item,
@@ -243,7 +249,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
         labelAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerLabel.setAdapter(labelAdapter);
 
-        AdapterView.OnItemSelectedListener listener = new AdapterView.OnItemSelectedListener() {
+        spinnerLabel.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 applyRecordFilters();
@@ -252,10 +258,82 @@ public class MedicalRecordActivity extends AppCompatActivity {
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
             }
-        };
+        });
+    }
 
-        spinnerPeriod.setOnItemSelectedListener(listener);
-        spinnerLabel.setOnItemSelectedListener(listener);
+    private void setupDateNavigation() {
+        selectedDate.setTimeInMillis(System.currentTimeMillis());
+        normalizeSelectedDate();
+        updateSelectedDateUi();
+
+        btnPrevDate.setOnClickListener(v -> changeSelectedDate(-1));
+        btnNextDate.setOnClickListener(v -> changeSelectedDate(1));
+
+        dateNavigationCard.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                dateTouchDownX = event.getX();
+                return true;
+            }
+
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                float deltaX = event.getX() - dateTouchDownX;
+
+                if (Math.abs(deltaX) >= 80f) {
+                    if (deltaX > 0) {
+                        changeSelectedDate(-1);
+                    } else {
+                        changeSelectedDate(1);
+                    }
+                }
+                v.performClick();
+                return true;
+            }
+
+            return true;
+        });
+    }
+
+    private void changeSelectedDate(int days) {
+        if (days > 0 && isTodaySelected()) {
+            return;
+        }
+
+        selectedDate.add(Calendar.DAY_OF_MONTH, days);
+
+        Calendar today = Calendar.getInstance();
+        normalizeCalendar(today);
+
+        if (selectedDate.after(today)) {
+            selectedDate.setTimeInMillis(today.getTimeInMillis());
+        }
+
+        updateSelectedDateUi();
+        applyRecordFilters();
+    }
+
+    private void updateSelectedDateUi() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 M월 d일 (E)", Locale.KOREA);
+        String prefix = isTodaySelected() ? "오늘 · " : "";
+        tvSelectedDate.setText(prefix + dateFormat.format(selectedDate.getTime()));
+        btnNextDate.setEnabled(!isTodaySelected());
+        btnNextDate.setAlpha(isTodaySelected() ? 0.35f : 1f);
+    }
+
+    private boolean isTodaySelected() {
+        Calendar today = Calendar.getInstance();
+        normalizeCalendar(today);
+        return selectedDate.getTimeInMillis() == today.getTimeInMillis();
+    }
+
+    private void normalizeSelectedDate() {
+        normalizeCalendar(selectedDate);
+    }
+
+    private void normalizeCalendar(Calendar calendar) {
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
     }
 
     private void loadRecords() {
