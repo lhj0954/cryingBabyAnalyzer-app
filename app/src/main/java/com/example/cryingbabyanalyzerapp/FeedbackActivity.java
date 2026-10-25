@@ -9,6 +9,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.concurrent.Executors;
+
 public class FeedbackActivity extends AppCompatActivity {
 
     private TextView tvFeedbackResult;
@@ -18,7 +20,7 @@ public class FeedbackActivity extends AppCompatActivity {
     private Button btnSubmit;
     private Button btnClose;
 
-    private CryApiService apiService;
+    private LocalCryRecordStore localRecordStore;
     private int recordId = -1;
 
     @Override
@@ -33,7 +35,7 @@ public class FeedbackActivity extends AppCompatActivity {
         btnSubmit = findViewById(R.id.btnSubmit);
         btnClose = findViewById(R.id.btnClose);
 
-        apiService = new CryApiService(BuildConfig.SERVER_IP);
+        localRecordStore = new LocalCryRecordStore(this);
 
         recordId = getIntent().getIntExtra("RECORD_ID", -1);
 
@@ -93,38 +95,36 @@ public class FeedbackActivity extends AppCompatActivity {
         btnSubmit.setEnabled(false);
         btnSubmit.setText("저장 중...");
 
-        apiService.submitFeedback(
-                recordId,
-                correct,
-                actualReason,
-                action,
-                new CryApiService.FeedbackCallback() {
-                    @Override
-                    public void onSuccess(CryApiService.CryRecord record) {
-                        runOnUiThread(() -> {
-                            Toast.makeText(
-                                    FeedbackActivity.this,
-                                    "피드백이 진료용 기록에 저장되었습니다.",
-                                    Toast.LENGTH_SHORT
-                            ).show();
-                            finish();
-                        });
-                    }
+        final String finalActualReason = actualReason;
+        final String finalAction = action;
 
-                    @Override
-                    public void onFailure(String message) {
-                        runOnUiThread(() -> {
-                            btnSubmit.setEnabled(true);
-                            btnSubmit.setText("피드백 저장하기");
-                            Toast.makeText(
-                                    FeedbackActivity.this,
-                                    message,
-                                    Toast.LENGTH_LONG
-                            ).show();
-                        });
-                    }
+        Executors.newSingleThreadExecutor().execute(() -> {
+            boolean updated = localRecordStore.updateFeedback(
+                    recordId,
+                    correct,
+                    finalActualReason,
+                    finalAction
+            );
+
+            runOnUiThread(() -> {
+                if (updated) {
+                    Toast.makeText(
+                            FeedbackActivity.this,
+                            "피드백이 태블릿 진료 기록에 저장되었습니다.",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                    finish();
+                } else {
+                    btnSubmit.setEnabled(true);
+                    btnSubmit.setText("피드백 저장하기");
+                    Toast.makeText(
+                            FeedbackActivity.this,
+                            "연결된 로컬 울음 기록을 찾지 못했습니다.",
+                            Toast.LENGTH_LONG
+                    ).show();
                 }
-        );
+            });
+        });
     }
 
     private String getSelectedReason() {
