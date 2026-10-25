@@ -67,6 +67,8 @@ public class CryApiService {
         public Float confidence;
         public Float duration_sec;
         public String message;
+        public String secondary_label;
+        public Float secondary_confidence;
 
         public Boolean feedback_correct;
         public String actual_reason;
