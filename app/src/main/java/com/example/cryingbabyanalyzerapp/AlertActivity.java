@@ -34,6 +34,9 @@ public class AlertActivity extends AppCompatActivity {
     private boolean flashOn = false;
 
     private String label;
+    private String secondaryLabel;
+    private float confidence = 0f;
+    private Float secondaryConfidence = null;
     private int recordId = -1;
 
     private Runnable flashRunnable;
@@ -60,6 +63,14 @@ public class AlertActivity extends AppCompatActivity {
 
         Intent receivedIntent = getIntent();
         label = receivedIntent.getStringExtra("label");
+        confidence = receivedIntent.getFloatExtra("confidence", 0f);
+        secondaryLabel = receivedIntent.getStringExtra("secondary_label");
+        if (receivedIntent.hasExtra("secondary_confidence")) {
+            secondaryConfidence = receivedIntent.getFloatExtra(
+                    "secondary_confidence",
+                    0f
+            );
+        }
         recordId = receivedIntent.getIntExtra("RECORD_ID", -1);
 
         String resultText = receivedIntent.getStringExtra("RESULT_TEXT");
@@ -67,7 +78,7 @@ public class AlertActivity extends AppCompatActivity {
             label = resultText;
         }
 
-        txtAlertCause.setText(convertLabelToKorean(label));
+        txtAlertCause.setText(buildAlertResultText());
 
         if (!SoothingAudioManager.isPlaying()) {
             btnStopSoothing.setText("울음 완화 재생 없음");
@@ -97,7 +108,7 @@ public class AlertActivity extends AppCompatActivity {
             );
             intent.putExtra(
                     "RESULT_TEXT",
-                    convertLabelToKorean(label)
+                    buildAlertResultText()
             );
             intent.putExtra(
                     "RECORD_ID",
@@ -107,6 +118,41 @@ public class AlertActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         });
+    }
+
+    private String buildAlertResultText() {
+        if (confidence < CryPredictionUtils.LOW_CONFIDENCE_THRESHOLD
+                && secondaryLabel != null
+                && secondaryConfidence != null) {
+
+            return String.format(
+                    Locale.KOREA,
+                    "가능성이 높은 원인\n1순위 %s %.0f%%\n2순위 %s %.0f%%",
+                    convertLabelShort(label),
+                    confidence * 100f,
+                    convertLabelShort(secondaryLabel),
+                    secondaryConfidence * 100f
+            );
+        }
+
+        return convertLabelToKorean(label);
+    }
+
+    private String convertLabelShort(String input) {
+        if (input == null || input.isEmpty()) {
+            return "울음";
+        }
+
+        String lower = input.toLowerCase(Locale.US);
+
+        if (lower.contains("uncomfortable")) return "불편함";
+        if (lower.contains("awake")) return "깸";
+        if (lower.contains("diaper")) return "기저귀";
+        if (lower.contains("hug")) return "안아달람";
+        if (lower.contains("hungry")) return "배고픔";
+        if (lower.contains("sleepy")) return "졸림";
+
+        return input;
     }
 
     private String convertLabelToKorean(String input) {
