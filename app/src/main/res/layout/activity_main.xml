@@ -170,28 +170,87 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="26dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:layout_marginTop="22dp"
+                android:background="@drawable/bg_monitor_card"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:background="@drawable/bg_baby_soft_pink"
+                        android:gravity="center"
+                        android:text="◉"
+                        android:textColor="@color/baby_pink_dark"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="상시 감시 모드"
+                            android:textColor="@color/baby_text"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvMonitorState"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="현재 꺼짐"
+                            android:textColor="@color/baby_pink_dark"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <Switch
+                        android:id="@+id/switchBackground"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        android:thumbTint="@color/bnv_item_color" />
+                </LinearLayout>
 
                 <TextView
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="지금 아기는"
-                    android:textColor="@color/baby_text"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <Switch
-                    android:id="@+id/switchBackground"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="감시모드"
+                    android:layout_marginTop="12dp"
+                    android:lineSpacingExtra="3dp"
+                    android:text="켜두면 앱을 보고 있지 않아도 울음을 계속 감지해요. 울음이 확인되면 자동으로 분석하고 알림을 보내드려요."
                     android:textColor="@color/baby_muted"
-                    android:textSize="13sp"
-                    android:thumbTint="@color/bnv_item_color" />
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="※ 감시 중에는 수동 울음 분석을 동시에 사용할 수 없어요."
+                    android:textColor="@color/baby_pink_dark"
+                    android:textSize="11sp" />
             </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="26dp"
+                android:text="지금 아기는"
+                android:textColor="@color/baby_text"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
             <LinearLayout
                 android:layout_width="match_parent"
