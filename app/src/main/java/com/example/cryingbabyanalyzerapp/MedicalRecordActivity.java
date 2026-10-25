@@ -57,6 +57,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
     private Button btnNextDate;
     private Spinner spinnerLabel;
     private TextView tvSelectedDate;
+    private TextView tvSpecialDateIndicator;
     private LinearLayout dateNavigationCard;
     private BottomNavigationView bottomNavigationView;
 
@@ -132,6 +133,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
         btnNextDate = findViewById(R.id.btnNextDate);
         spinnerLabel = findViewById(R.id.spinnerLabel);
         tvSelectedDate = findViewById(R.id.tvSelectedDate);
+        tvSpecialDateIndicator = findViewById(R.id.tvSpecialDateIndicator);
         dateNavigationCard = findViewById(R.id.dateNavigationCard);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
@@ -230,6 +232,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
         if (localRecordStore != null) {
             loadRecords();
         }
+        updateSelectedDateUi();
     }
 
     private void setupRecordFilters() {
@@ -558,11 +561,77 @@ public class MedicalRecordActivity extends AppCompatActivity {
     }
 
     private void updateSelectedDateUi() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 M월 d일 (E)", Locale.KOREA);
+        SimpleDateFormat dateFormat = new SimpleDateFormat(
+                "yyyy년 M월 d일 (E)",
+                Locale.KOREA
+        );
+
         String prefix = isTodaySelected() ? "오늘 · " : "";
-        tvSelectedDate.setText("📅  " + prefix + dateFormat.format(selectedDate.getTime()));
+        int specialNoteCount = countSpecialNotesForDate(selectedDate);
+        String check = specialNoteCount > 0 ? " ✓" : "";
+
+        tvSelectedDate.setText(
+                "📅  "
+                        + prefix
+                        + dateFormat.format(selectedDate.getTime())
+                        + check
+        );
+
+        if (tvSpecialDateIndicator != null) {
+            if (specialNoteCount > 0) {
+                tvSpecialDateIndicator.setText(
+                        "✓ 특이사항 "
+                                + specialNoteCount
+                                + "건 · 이 날짜에는 보호자 메모가 있어요."
+                );
+                tvSpecialDateIndicator.setTextColor(
+                        androidx.core.content.ContextCompat.getColor(
+                                this,
+                                R.color.baby_pink_dark
+                        )
+                );
+                tvSpecialDateIndicator.setTypeface(
+                        null,
+                        android.graphics.Typeface.BOLD
+                );
+            } else {
+                tvSpecialDateIndicator.setText(
+                        "✓ 표시는 특이사항이 기록된 날짜예요."
+                );
+                tvSpecialDateIndicator.setTextColor(
+                        androidx.core.content.ContextCompat.getColor(
+                                this,
+                                R.color.baby_muted
+                        )
+                );
+                tvSpecialDateIndicator.setTypeface(
+                        null,
+                        android.graphics.Typeface.NORMAL
+                );
+            }
+        }
+
         btnNextDate.setEnabled(!isTodaySelected());
         btnNextDate.setAlpha(isTodaySelected() ? 0.35f : 1f);
+    }
+
+    private int countSpecialNotesForDate(Calendar targetDate) {
+        List<SpecialNote> notes = getSpecialNotes();
+        int count = 0;
+
+        Calendar noteDate = Calendar.getInstance();
+
+        for (SpecialNote note : notes) {
+            noteDate.setTimeInMillis(note.savedAt);
+
+            if (noteDate.get(Calendar.YEAR) == targetDate.get(Calendar.YEAR)
+                    && noteDate.get(Calendar.DAY_OF_YEAR)
+                    == targetDate.get(Calendar.DAY_OF_YEAR)) {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private boolean isTodaySelected() {
@@ -1300,12 +1369,23 @@ public class MedicalRecordActivity extends AppCompatActivity {
         updateSpecialNoteListButtonText();
 
         tvSpecialNoteStatus.setText("저장 완료 · 특이사항 목록에 추가되었습니다.");
+        updateSelectedDateUi();
         Toast.makeText(this, "특이사항 메모를 저장했습니다.", Toast.LENGTH_SHORT).show();
     }
 
     private SpecialNote buildNoteFromForm() {
         SpecialNote note = new SpecialNote();
-        note.savedAt = System.currentTimeMillis();
+
+        // 현재 보고 있는 날짜에 특이사항을 귀속합니다.
+        Calendar noteTime = (Calendar) selectedDate.clone();
+        Calendar now = Calendar.getInstance();
+
+        noteTime.set(Calendar.HOUR_OF_DAY, now.get(Calendar.HOUR_OF_DAY));
+        noteTime.set(Calendar.MINUTE, now.get(Calendar.MINUTE));
+        noteTime.set(Calendar.SECOND, now.get(Calendar.SECOND));
+        noteTime.set(Calendar.MILLISECOND, now.get(Calendar.MILLISECOND));
+
+        note.savedAt = noteTime.getTimeInMillis();
         note.ageMonths = etAgeMonths.getText().toString().trim();
         note.birthWeight = etBirthWeight.getText().toString().trim();
         note.feedsPerDay = etFeedsPerDay.getText().toString().trim();
