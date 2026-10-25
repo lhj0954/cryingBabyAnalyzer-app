@@ -324,11 +324,16 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tvViewAllRecords"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="6dp"
                     android:text="기록에서 전체보기"
                     android:textColor="@color/baby_pink_dark"
-                    android:textSize="13sp" />
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
             </LinearLayout>
 
             <LinearLayout
@@ -387,12 +392,6 @@
                         android:visibility="gone" />
                 </LinearLayout>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="›"
-                    android:textColor="#B8AEAB"
-                    android:textSize="28sp" />
             </LinearLayout>
 
             <LinearLayout
