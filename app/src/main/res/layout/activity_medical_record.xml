@@ -215,37 +215,6 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="기본 정보"
-                android:textColor="@color/baby_text"
-                android:textSize="17sp"
-                android:textStyle="bold" />
-
-            <EditText
-                android:id="@+id/etAgeMonths"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:hint="생후 개월 수"
-                android:inputType="number"
-                android:maxLines="1" />
-
-            <EditText
-                android:id="@+id/etBirthWeight"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="출생체중(g)"
-                android:inputType="numberDecimal"
-                android:maxLines="1" />
-
-            <CheckBox
-                android:id="@+id/cbPreterm"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="미숙아로 출생함" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
                 android:text="수유 · 수면 · 배변"
                 android:textColor="@color/baby_text"
