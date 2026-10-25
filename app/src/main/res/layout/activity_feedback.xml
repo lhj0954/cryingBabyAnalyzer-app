@@ -146,28 +146,44 @@
                 android:textSize="16sp" />
         </RadioGroup>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="3. 보호자가 취한 대처 방법 (선택사항)"
-            android:textColor="#000000"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/etAction"
+        <LinearLayout
+            android:id="@+id/actionSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="32dp"
-            android:background="@android:drawable/edit_text"
-            android:gravity="top|start"
-            android:hint="예) 수유 후 진정됨, 기저귀 교체 후 진정됨"
-            android:inputType="textMultiLine"
-            android:minLines="3"
-            android:padding="12dp"
-            android:textColor="#000000"
-            android:textColorHint="#757575" />
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="3. 불편함을 어떻게 해결했나요? (선택사항)"
+                android:textColor="#000000"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:text="불편함의 원인을 찾거나 달래기 위해 한 행동을 간단히 남겨주세요."
+                android:textColor="@color/baby_muted"
+                android:textSize="13sp" />
+
+            <EditText
+                android:id="@+id/etAction"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="32dp"
+                android:background="@android:drawable/edit_text"
+                android:gravity="top|start"
+                android:hint="예) 자세를 바꿔 안아주니 진정됨, 옷을 느슨하게 해줌"
+                android:inputType="textMultiLine"
+                android:minLines="3"
+                android:padding="12dp"
+                android:textColor="#000000"
+                android:textColorHint="#757575" />
+        </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSubmit"
