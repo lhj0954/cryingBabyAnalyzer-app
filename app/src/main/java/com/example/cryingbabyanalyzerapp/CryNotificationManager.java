@@ -42,6 +42,20 @@ public class CryNotificationManager {
         return input; // 매칭되지 않는 기본 텍스트 보호
     }
 
+    private String convertLabelShort(String input) {
+        if (input == null || input.isEmpty()) return "울음";
+
+        String lower = input.toLowerCase(Locale.US);
+        if (lower.contains("uncomfortable")) return "불편함";
+        if (lower.contains("awake")) return "깸";
+        if (lower.contains("diaper")) return "기저귀";
+        if (lower.contains("hug")) return "안아달람";
+        if (lower.contains("hungry")) return "배고픔";
+        if (lower.contains("sleepy")) return "졸림";
+
+        return input;
+    }
+
     // 채널 생성
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -68,11 +82,25 @@ public class CryNotificationManager {
 
     // 울음 분석 결과와 recordId를 알림 화면에 전달
     public void sendCryNotification(String label, float confidence, int recordId) {
+        sendCryNotification(label, confidence, null, null, recordId);
+    }
+
+    public void sendCryNotification(
+            String label,
+            float confidence,
+            String secondaryLabel,
+            Float secondaryConfidence,
+            int recordId
+    ) {
         // 1. 인텐트 설정
         Intent intent = new Intent(context, AlertActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.putExtra("label", label);
         intent.putExtra("confidence", confidence);
+        intent.putExtra("secondary_label", secondaryLabel);
+        if (secondaryConfidence != null) {
+            intent.putExtra("secondary_confidence", secondaryConfidence);
+        }
         intent.putExtra("RECORD_ID", recordId);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
@@ -93,7 +121,22 @@ public class CryNotificationManager {
         }
 
         // 💡 [수정] 복잡한 수치(Confidence) 및 영어 라벨을 없애고 직관적인 한국어 문구만 표시되도록 수정
-        String contentText = convertLabelToKorean(label);
+        String contentText;
+
+        if (confidence < CryPredictionUtils.LOW_CONFIDENCE_THRESHOLD
+                && secondaryLabel != null
+                && secondaryConfidence != null) {
+            contentText = String.format(
+                    Locale.KOREA,
+                    "%s %.0f%% / %s %.0f%%",
+                    convertLabelShort(label),
+                    confidence * 100f,
+                    convertLabelShort(secondaryLabel),
+                    secondaryConfidence * 100f
+            );
+        } else {
+            contentText = convertLabelToKorean(label);
+        }
 
         Intent stopSoothingIntent = new Intent(context, SoothingStopReceiver.class);
         stopSoothingIntent.setAction(SoothingStopReceiver.ACTION_STOP_SOOTHING);
