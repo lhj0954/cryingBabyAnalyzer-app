@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 작은 알림 아이콘: 투명 배경 + 흰색 단색 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M16,57 C16,40 29,29 47,29 C65,29 78,40 78,57 C78,75 65,86 47,86 C29,86 16,75 16,57 Z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M16,51 C10,51 7,56 7,61 C7,67 11,70 17,69 Z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M78,51 C84,51 87,56 87,61 C87,67 83,70 77,69 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M39,30 C39,22 45,18 51,21 C57,24 58,31 54,36 C53,31 50,28 46,29 C43,29 41,30 39,30 Z" />
+
+    <!-- 음파는 굵은 단색으로 단순화 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M88,48 C94,54 94,62 88,68" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M97,41 C108,51 108,67 97,77" />
+</vector>
