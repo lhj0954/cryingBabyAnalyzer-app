@@ -414,14 +414,9 @@ public class MainActivity extends AppCompatActivity {
                             loadHomeSummary();
 
                             if (response != null && response.prediction != null) {
+                                // 수동 분석은 화면 결과만 표시합니다.
+                                // 긴급 알림/진동/플래시는 감시모드(CryDetectionService)에서만 동작합니다.
                                 SoothingAudioManager.playIfAutoEnabled(MainActivity.this);
-                                notificationManager.sendCryNotification(
-                                        finalLabel,
-                                        finalConfidence,
-                                        finalSecondaryLabel,
-                                        finalSecondaryConfidence,
-                                        currentRecordId
-                                );
                             }
                         });
                     }
