@@ -1,6 +1,5 @@
 package com.example.cryingbabyanalyzerapp;
 
-import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.MediaPlayer;
@@ -21,6 +20,9 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.datepicker.CalendarConstraints;
+import com.google.android.material.datepicker.DateValidatorPointBackward;
+import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -35,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.Executors;
 
 public class MedicalRecordActivity extends AppCompatActivity {
@@ -310,28 +313,80 @@ public class MedicalRecordActivity extends AppCompatActivity {
     }
 
     private void showDatePicker() {
-        DatePickerDialog dialog = new DatePickerDialog(
-                this,
-                (view, year, month, dayOfMonth) -> {
-                    Calendar pickedDate = Calendar.getInstance();
-                    pickedDate.set(year, month, dayOfMonth);
-                    normalizeCalendar(pickedDate);
+        TimeZone utc = TimeZone.getTimeZone("UTC");
 
-                    if (pickedDate.getTimeInMillis() == selectedDate.getTimeInMillis()) {
-                        return;
-                    }
-
-                    animateToSelectedDate(pickedDate);
-                },
+        Calendar selectedUtc = Calendar.getInstance(utc);
+        selectedUtc.clear();
+        selectedUtc.set(
                 selectedDate.get(Calendar.YEAR),
                 selectedDate.get(Calendar.MONTH),
                 selectedDate.get(Calendar.DAY_OF_MONTH)
         );
 
-        // 기록은 오늘까지 존재하므로 미래 날짜 선택은 막습니다.
-        dialog.getDatePicker().setMaxDate(System.currentTimeMillis());
-        dialog.setTitle("기록을 볼 날짜 선택");
-        dialog.show();
+        CalendarConstraints constraints = new CalendarConstraints.Builder()
+                .setOpenAt(selectedUtc.getTimeInMillis())
+                .setEnd(MaterialDatePicker.todayInUtcMilliseconds())
+                .setValidator(DateValidatorPointBackward.now())
+                .build();
+
+        MaterialDatePicker<Long> picker =
+                MaterialDatePicker.Builder.datePicker()
+                        .setTitleText("기록을 볼 날짜 선택")
+                        .setSelection(selectedUtc.getTimeInMillis())
+                        .setCalendarConstraints(constraints)
+                        .setDayViewDecorator(
+                                new SpecialNoteDayDecorator(
+                                        buildSpecialNoteDateKeys()
+                                )
+                        )
+                        .setPositiveButtonText("선택")
+                        .setNegativeButtonText("취소")
+                        .build();
+
+        picker.addOnPositiveButtonClickListener(selection -> {
+            if (selection == null) {
+                return;
+            }
+
+            Calendar pickedUtc = Calendar.getInstance(utc);
+            pickedUtc.setTimeInMillis(selection);
+
+            Calendar pickedDate = Calendar.getInstance();
+            pickedDate.clear();
+            pickedDate.set(
+                    pickedUtc.get(Calendar.YEAR),
+                    pickedUtc.get(Calendar.MONTH),
+                    pickedUtc.get(Calendar.DAY_OF_MONTH)
+            );
+            normalizeCalendar(pickedDate);
+
+            if (pickedDate.getTimeInMillis() == selectedDate.getTimeInMillis()) {
+                return;
+            }
+
+            animateToSelectedDate(pickedDate);
+        });
+
+        picker.show(getSupportFragmentManager(), "medical_record_date_picker");
+    }
+
+    private List<Integer> buildSpecialNoteDateKeys() {
+        List<Integer> dateKeys = new ArrayList<>();
+        Calendar calendar = Calendar.getInstance();
+
+        for (SpecialNote note : getSpecialNotes()) {
+            calendar.setTimeInMillis(note.savedAt);
+
+            int key = calendar.get(Calendar.YEAR) * 10000
+                    + (calendar.get(Calendar.MONTH) + 1) * 100
+                    + calendar.get(Calendar.DAY_OF_MONTH);
+
+            if (!dateKeys.contains(key)) {
+                dateKeys.add(key);
+            }
+        }
+
+        return dateKeys;
     }
 
     private void animateToSelectedDate(Calendar targetDate) {
