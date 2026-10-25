@@ -2,4 +2,13 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="baby_bg">#FFF9F4</color>
+    <color name="baby_pink">#E9899A</color>
+    <color name="baby_pink_dark">#D96B7E</color>
+    <color name="baby_pink_soft">#FCE3E8</color>
+    <color name="baby_text">#2D2523</color>
+    <color name="baby_muted">#8D8481</color>
+    <color name="baby_border">#F2E4DF</color>
+    <color name="baby_lavender">#F0ECFA</color>
+    <color name="baby_green">#E7F5EA</color>
 </resources>
