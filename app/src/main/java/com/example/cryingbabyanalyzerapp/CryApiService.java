@@ -1,12 +1,9 @@
 package com.example.cryingbabyanalyzerapp;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Type;
-import java.util.List;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -21,21 +18,6 @@ public class CryApiService {
 
     public interface PredictCallback {
         void onSuccess(PredictResponse response);
-        void onFailure(String message);
-    }
-
-    public interface RecordsCallback {
-        void onSuccess(List<CryRecord> records);
-        void onFailure(String message);
-    }
-
-    public interface StatsCallback {
-        void onSuccess(RecordsStats stats);
-        void onFailure(String message);
-    }
-
-    public interface FeedbackCallback {
-        void onSuccess(CryRecord record);
         void onFailure(String message);
     }
 
@@ -69,6 +51,10 @@ public class CryApiService {
         public float merged_cry_max;
     }
 
+    /*
+     * 태블릿 로컬 SQLite 기록 표현용 모델입니다.
+     * 서버 기록 API에는 더 이상 사용하지 않습니다.
+     */
     public static class CryRecord {
         public int id;
         public String created_at;
@@ -86,44 +72,12 @@ public class CryApiService {
         public String feedback_created_at;
     }
 
-    public static class RecordsStats {
-        public int total;
-        public List<LabelCount> by_label;
-        public List<HourCount> by_hour;
-    }
-
-    public static class LabelCount {
-        public String label;
-        public int count;
-    }
-
-    public static class HourCount {
-        public String hour;
-        public int count;
-    }
-
-    private static class FeedbackBody {
-        boolean correct;
-        String actual_reason;
-        String caregiver_action;
-
-        FeedbackBody(boolean correct, String actualReason, String caregiverAction) {
-            this.correct = correct;
-            this.actual_reason = actualReason;
-            this.caregiver_action = caregiverAction;
-        }
-    }
-
     private final OkHttpClient client = new OkHttpClient();
     private final Gson gson = new Gson();
     private final String predictUrl;
-    private final String recordsUrl;
-    private final String statsUrl;
 
     public CryApiService(String baseUrl) {
         this.predictUrl = baseUrl + "/predict";
-        this.recordsUrl = baseUrl + "/records";
-        this.statsUrl = baseUrl + "/records/stats";
     }
 
     public void predict(File wavFile, PredictCallback callback) {
@@ -157,102 +111,6 @@ public class CryApiService {
 
                 String body = response.body() != null ? response.body().string() : "";
                 PredictResponse parsed = gson.fromJson(body, PredictResponse.class);
-                callback.onSuccess(parsed);
-            }
-        });
-    }
-
-    public void getRecords(RecordsCallback callback) {
-        Request request = new Request.Builder()
-                .url(recordsUrl + "?limit=500")
-                .get()
-                .build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                callback.onFailure("기록 조회 실패: " + e.getMessage());
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    callback.onFailure("서버 오류: " + response.code());
-                    return;
-                }
-
-                String body = response.body() != null ? response.body().string() : "[]";
-                Type type = new TypeToken<List<CryRecord>>() {}.getType();
-                List<CryRecord> parsed = gson.fromJson(body, type);
-                callback.onSuccess(parsed);
-            }
-        });
-    }
-
-    public void submitFeedback(
-            int recordId,
-            boolean correct,
-            String actualReason,
-            String caregiverAction,
-            FeedbackCallback callback
-    ) {
-        FeedbackBody bodyData = new FeedbackBody(
-                correct,
-                actualReason,
-                caregiverAction
-        );
-
-        RequestBody body = RequestBody.create(
-                gson.toJson(bodyData),
-                MediaType.parse("application/json; charset=utf-8")
-        );
-
-        Request request = new Request.Builder()
-                .url(recordsUrl + "/" + recordId + "/feedback")
-                .post(body)
-                .build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                callback.onFailure("피드백 저장 실패: " + e.getMessage());
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    callback.onFailure("서버 오류: " + response.code());
-                    return;
-                }
-
-                String bodyText = response.body() != null ? response.body().string() : "{}";
-                CryRecord parsed = gson.fromJson(bodyText, CryRecord.class);
-                callback.onSuccess(parsed);
-            }
-        });
-    }
-
-    public void getStats(StatsCallback callback) {
-        Request request = new Request.Builder()
-                .url(statsUrl)
-                .get()
-                .build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                callback.onFailure("통계 조회 실패: " + e.getMessage());
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    callback.onFailure("서버 오류: " + response.code());
-                    return;
-                }
-
-                String body = response.body() != null ? response.body().string() : "{}";
-                RecordsStats parsed = gson.fromJson(body, RecordsStats.class);
                 callback.onSuccess(parsed);
             }
         });
