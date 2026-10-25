@@ -1,12 +1,13 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Base.Theme.CryingBabyAnalyzerApp" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">#FFFFFF</item>
-
-        <item name="colorSecondaryContainer">@android:color/transparent</item>
-
-        <item name="colorSecondary">#7F8C8D</item>
-        <item name="colorTertiary">#BDC3C7</item>
-        <item name="android:windowBackground">#FFFFFF</item>
+        <item name="colorPrimary">@color/baby_pink</item>
+        <item name="colorSecondary">@color/baby_pink_dark</item>
+        <item name="colorTertiary">@color/baby_lavender</item>
+        <item name="colorSecondaryContainer">@color/baby_pink_soft</item>
+        <item name="android:windowBackground">@color/baby_bg</item>
+        <item name="android:navigationBarColor">@android:color/white</item>
+        <item name="android:statusBarColor">@color/baby_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <style name="Theme.CryingBabyAnalyzerApp" parent="Base.Theme.CryingBabyAnalyzerApp" />
