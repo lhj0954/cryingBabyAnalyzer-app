@@ -155,7 +155,8 @@ public class CryNotificationManager {
                         .setDismissalId("baby_cry_alert");
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_stat_baby_cry)
+                .setColor(androidx.core.content.ContextCompat.getColor(context, R.color.baby_pink_dark))
                 .setContentTitle("아기 울음 감지")
                 .setContentText(contentText)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(contentText))
