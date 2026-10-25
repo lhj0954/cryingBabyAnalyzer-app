@@ -19,7 +19,7 @@ import java.util.UUID;
 public class LocalCryRecordStore extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "cry_records_local.db";
-    private static final int DB_VERSION = 1;
+    private static final int DB_VERSION = 2;
     private static final String TABLE = "cry_records";
 
     private final Context appContext;
@@ -42,6 +42,8 @@ public class LocalCryRecordStore extends SQLiteOpenHelper {
                         "confidence REAL," +
                         "duration_sec REAL," +
                         "message TEXT," +
+                        "secondary_label TEXT," +
+                        "secondary_confidence REAL," +
                         "feedback_correct INTEGER," +
                         "actual_reason TEXT," +
                         "caregiver_action TEXT," +
@@ -52,13 +54,18 @@ public class LocalCryRecordStore extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // 현재 로컬 DB 최초 버전. 추후 스키마 변경 시 마이그레이션을 추가합니다.
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE " + TABLE + " ADD COLUMN secondary_label TEXT");
+            db.execSQL("ALTER TABLE " + TABLE + " ADD COLUMN secondary_confidence REAL");
+        }
     }
 
     public synchronized int insertRecord(
             File sourceWav,
             String label,
             Float confidence,
+            String secondaryLabel,
+            Float secondaryConfidence,
             Float durationSec,
             String message
     ) throws Exception {
@@ -102,6 +109,14 @@ public class LocalCryRecordStore extends SQLiteOpenHelper {
 
         if (durationSec != null) {
             values.put("duration_sec", durationSec);
+        }
+
+        if (secondaryLabel != null && !secondaryLabel.trim().isEmpty()) {
+            values.put("secondary_label", secondaryLabel);
+        }
+
+        if (secondaryConfidence != null) {
+            values.put("secondary_confidence", secondaryConfidence);
         }
 
         values.put("message", message);
@@ -213,6 +228,8 @@ public class LocalCryRecordStore extends SQLiteOpenHelper {
         record.confidence = getNullableFloat(cursor, "confidence");
         record.duration_sec = getNullableFloat(cursor, "duration_sec");
         record.message = getNullableString(cursor, "message");
+        record.secondary_label = getNullableString(cursor, "secondary_label");
+        record.secondary_confidence = getNullableFloat(cursor, "secondary_confidence");
 
         int feedbackIndex = cursor.getColumnIndexOrThrow("feedback_correct");
         if (cursor.isNull(feedbackIndex)) {
