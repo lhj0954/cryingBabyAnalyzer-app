@@ -88,6 +88,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
 
     private final Calendar selectedDate = Calendar.getInstance();
     private float dateTouchDownX = 0f;
+    private boolean dateTransitionRunning = false;
     private MediaPlayer activePlayer;
     private Button activePlaybackButton;
 
@@ -266,26 +267,65 @@ public class MedicalRecordActivity extends AppCompatActivity {
         normalizeSelectedDate();
         updateSelectedDateUi();
 
-        btnPrevDate.setOnClickListener(v -> changeSelectedDate(-1));
-        btnNextDate.setOnClickListener(v -> changeSelectedDate(1));
+        btnPrevDate.setOnClickListener(v -> animateDateChange(-1));
+        btnNextDate.setOnClickListener(v -> animateDateChange(1));
 
         dateNavigationCard.setOnTouchListener((v, event) -> {
+            if (dateTransitionRunning) {
+                return true;
+            }
+
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 dateTouchDownX = event.getX();
+                cancelDatePageAnimations();
+                return true;
+            }
+
+            if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                float deltaX = event.getX() - dateTouchDownX;
+
+                // 손가락을 따라 페이지가 조금씩 움직이도록 해 스와이프 느낌을 줍니다.
+                float dragX = deltaX * 0.55f;
+
+                // 오늘에서 미래 날짜로 넘기는 동작은 탄성처럼 제한합니다.
+                if (deltaX < 0 && isTodaySelected()) {
+                    dragX *= 0.25f;
+                }
+
+                float width = Math.max(
+                        dateNavigationCard.getWidth(),
+                        getResources().getDisplayMetrics().widthPixels * 0.7f
+                );
+                float alpha = 1f - Math.min(
+                        0.30f,
+                        Math.abs(dragX) / width * 0.45f
+                );
+
+                setDatePageTransform(dragX, alpha);
                 return true;
             }
 
             if (event.getAction() == MotionEvent.ACTION_UP) {
                 float deltaX = event.getX() - dateTouchDownX;
 
-                if (Math.abs(deltaX) >= 80f) {
-                    if (deltaX > 0) {
-                        changeSelectedDate(-1);
+                if (Math.abs(deltaX) >= dpToPx(64)) {
+                    int days = deltaX > 0 ? -1 : 1;
+
+                    if (days > 0 && isTodaySelected()) {
+                        animateDatePageBack();
                     } else {
-                        changeSelectedDate(1);
+                        animateDateChange(days);
                     }
+                } else {
+                    animateDatePageBack();
                 }
+
                 v.performClick();
+                return true;
+            }
+
+            if (event.getAction() == MotionEvent.ACTION_CANCEL) {
+                animateDatePageBack();
                 return true;
             }
 
@@ -293,11 +333,74 @@ public class MedicalRecordActivity extends AppCompatActivity {
         });
     }
 
-    private void changeSelectedDate(int days) {
-        if (days > 0 && isTodaySelected()) {
+    private void animateDateChange(int days) {
+        if (dateTransitionRunning) {
             return;
         }
 
+        if (days > 0 && isTodaySelected()) {
+            animateDatePageBack();
+            return;
+        }
+
+        dateTransitionRunning = true;
+        releaseActivePlayer();
+
+        float width = Math.max(
+                dateNavigationCard.getWidth(),
+                getResources().getDisplayMetrics().widthPixels * 0.82f
+        );
+
+        // 이전 날짜는 현재 페이지가 오른쪽으로, 다음 날짜는 왼쪽으로 빠집니다.
+        float outX = days < 0 ? width : -width;
+        float inX = -outX;
+
+        tvSummary.animate()
+                .translationX(outX)
+                .alpha(0.12f)
+                .setDuration(150L)
+                .start();
+
+        recordListContainer.animate()
+                .translationX(outX)
+                .alpha(0.12f)
+                .setDuration(150L)
+                .start();
+
+        dateNavigationCard.animate()
+                .translationX(outX)
+                .alpha(0.12f)
+                .setDuration(150L)
+                .withEndAction(() -> {
+                    moveSelectedDate(days);
+                    updateSelectedDateUi();
+                    applyRecordFilters();
+
+                    setDatePageTransform(inX, 0.12f);
+
+                    tvSummary.animate()
+                            .translationX(0f)
+                            .alpha(1f)
+                            .setDuration(230L)
+                            .start();
+
+                    recordListContainer.animate()
+                            .translationX(0f)
+                            .alpha(1f)
+                            .setDuration(230L)
+                            .start();
+
+                    dateNavigationCard.animate()
+                            .translationX(0f)
+                            .alpha(1f)
+                            .setDuration(230L)
+                            .withEndAction(() -> dateTransitionRunning = false)
+                            .start();
+                })
+                .start();
+    }
+
+    private void moveSelectedDate(int days) {
         selectedDate.add(Calendar.DAY_OF_MONTH, days);
 
         Calendar today = Calendar.getInstance();
@@ -306,9 +409,48 @@ public class MedicalRecordActivity extends AppCompatActivity {
         if (selectedDate.after(today)) {
             selectedDate.setTimeInMillis(today.getTimeInMillis());
         }
+    }
 
-        updateSelectedDateUi();
-        applyRecordFilters();
+    private void animateDatePageBack() {
+        cancelDatePageAnimations();
+
+        tvSummary.animate()
+                .translationX(0f)
+                .alpha(1f)
+                .setDuration(180L)
+                .start();
+
+        recordListContainer.animate()
+                .translationX(0f)
+                .alpha(1f)
+                .setDuration(180L)
+                .start();
+
+        dateNavigationCard.animate()
+                .translationX(0f)
+                .alpha(1f)
+                .setDuration(180L)
+                .start();
+    }
+
+    private void setDatePageTransform(float translationX, float alpha) {
+        dateNavigationCard.setTranslationX(translationX);
+        tvSummary.setTranslationX(translationX);
+        recordListContainer.setTranslationX(translationX);
+
+        dateNavigationCard.setAlpha(alpha);
+        tvSummary.setAlpha(alpha);
+        recordListContainer.setAlpha(alpha);
+    }
+
+    private void cancelDatePageAnimations() {
+        dateNavigationCard.animate().cancel();
+        tvSummary.animate().cancel();
+        recordListContainer.animate().cancel();
+    }
+
+    private float dpToPx(float dp) {
+        return dp * getResources().getDisplayMetrics().density;
     }
 
     private void updateSelectedDateUi() {
