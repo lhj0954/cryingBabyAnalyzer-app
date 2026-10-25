@@ -77,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             updateResultUI();
+            loadHomeSummary();
         }
     };
 
@@ -356,12 +357,30 @@ public class MainActivity extends AppCompatActivity {
                             confidence = response.prediction.confidence;
                         }
 
+                        String secondaryLabel = null;
+                        Float secondaryConfidence = null;
+
+                        if (response != null
+                                && response.prediction != null
+                                && response.prediction.scores != null) {
+                            secondaryLabel = CryPredictionUtils.getSecondBestLabel(
+                                    response.prediction.scores,
+                                    label
+                            );
+                            secondaryConfidence = CryPredictionUtils.getScore(
+                                    response.prediction.scores,
+                                    secondaryLabel
+                            );
+                        }
+
                         int savedRecordId = -1;
                         try {
                             savedRecordId = localRecordStore.insertRecord(
                                     wavFile,
                                     label,
                                     confidence,
+                                    secondaryLabel,
+                                    secondaryConfidence,
                                     response != null ? response.duration_sec : 5f,
                                     response != null ? response.message : null
                             );
@@ -370,6 +389,8 @@ public class MainActivity extends AppCompatActivity {
 
                         final String finalLabel = label;
                         final float finalConfidence = confidence;
+                        final String finalSecondaryLabel = secondaryLabel;
+                        final Float finalSecondaryConfidence = secondaryConfidence;
                         final int finalRecordId = savedRecordId;
 
                         txtStatus.post(() -> {
@@ -378,13 +399,12 @@ public class MainActivity extends AppCompatActivity {
 
                             currentRecordId = finalRecordId;
 
-                            txtResult.setText(convertLabelToKorean(finalLabel));
-                            tvRecentMeta.setText(
-                                    String.format(
-                                            Locale.KOREA,
-                                            "방금 분석 · 신뢰도 %.0f%%",
-                                            finalConfidence * 100f
-                                    )
+                            showPredictionResult(
+                                    finalLabel,
+                                    finalConfidence,
+                                    finalSecondaryLabel,
+                                    finalSecondaryConfidence,
+                                    "방금 분석"
                             );
 
                             btnFeedback.setVisibility(
@@ -641,17 +661,60 @@ public class MainActivity extends AppCompatActivity {
         tvTopCause.setText(topLabel);
 
         CryApiService.CryRecord recent = records.get(0);
-        if (currentRecordId <= 0) {
-            txtResult.setText(convertLabelToKorean(recent.label));
-            currentRecordId = recent.id;
-        }
+        currentRecordId = recent.id;
 
-        String meta = recent.created_at != null ? recent.created_at : "최근 분석";
-        if (recent.confidence != null) {
-            meta += String.format(Locale.KOREA, " · 신뢰도 %.0f%%", recent.confidence * 100f);
+        showPredictionResult(
+                recent.label,
+                recent.confidence != null ? recent.confidence : 0f,
+                recent.secondary_label,
+                recent.secondary_confidence,
+                recent.created_at != null ? recent.created_at : "최근 분석"
+        );
+
+        btnFeedback.setVisibility(recent.id > 0 ? View.VISIBLE : View.GONE);
+    }
+
+    private void showPredictionResult(
+            String label,
+            float confidence,
+            String secondaryLabel,
+            Float secondaryConfidence,
+            String prefix
+    ) {
+        boolean showTopTwo = confidence < CryPredictionUtils.LOW_CONFIDENCE_THRESHOLD
+                && secondaryLabel != null
+                && secondaryConfidence != null;
+
+        if (showTopTwo) {
+            txtResult.setText(
+                    convertLabelShort(label)
+                            + " 또는 "
+                            + convertLabelShort(secondaryLabel)
+                            + " 가능성이 있어요."
+            );
+
+            tvRecentMeta.setText(
+                    String.format(
+                            Locale.KOREA,
+                            "%s · 1순위 %s %.0f%% · 2순위 %s %.0f%%",
+                            prefix,
+                            convertLabelShort(label),
+                            confidence * 100f,
+                            convertLabelShort(secondaryLabel),
+                            secondaryConfidence * 100f
+                    )
+            );
+        } else {
+            txtResult.setText(convertLabelToKorean(label));
+            tvRecentMeta.setText(
+                    String.format(
+                            Locale.KOREA,
+                            "%s · 신뢰도 %.0f%%",
+                            prefix,
+                            confidence * 100f
+                    )
+            );
         }
-        tvRecentMeta.setText(meta);
-        btnFeedback.setVisibility(View.VISIBLE);
     }
 
     private String convertLabelShort(String input) {
