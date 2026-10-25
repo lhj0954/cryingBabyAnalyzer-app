@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F7F9FC">
+    android:background="@color/baby_bg">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -14,7 +14,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="울음 완화 설정"
-            android:textColor="#2C3E50"
+            android:textColor="@color/baby_text"
             android:textSize="26sp"
             android:textStyle="bold" />
 
@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="울음 분석이 완료되면 선택한 엄마 음성 또는 진정 음악을 자동으로 재생할 수 있습니다."
-            android:textColor="#7F8C8D"
+            android:textColor="@color/baby_muted"
             android:textSize="14sp" />
 
         <Switch
@@ -32,7 +32,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:text="울음 감지 후 자동 재생"
-            android:textColor="#2C3E50"
+            android:textColor="@color/baby_text"
             android:textSize="17sp"
             android:textStyle="bold" />
 
@@ -41,7 +41,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:text="재생할 음원"
-            android:textColor="#2C3E50"
+            android:textColor="@color/baby_text"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -53,7 +53,7 @@
             android:background="@drawable/bg_record_card"
             android:padding="16dp"
             android:text="선택된 음원 없음"
-            android:textColor="#34495E"
+            android:textColor="@color/baby_text"
             android:textSize="15sp" />
 
         <Button
@@ -61,7 +61,7 @@
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_marginTop="10dp"
-            android:backgroundTint="#5B8DEF"
+            android:backgroundTint="@color/baby_pink_dark"
             android:text="엄마 음성 / 진정 음악 선택 또는 변경"
             android:textColor="#FFFFFF"
             android:textStyle="bold" />
@@ -71,7 +71,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:text="자동 재생 시간"
-            android:textColor="#2C3E50"
+            android:textColor="@color/baby_text"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -89,7 +89,7 @@
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_marginTop="24dp"
-            android:backgroundTint="#FF7A85"
+            android:backgroundTint="@color/baby_pink"
             android:text="선택한 음원 테스트 재생"
             android:textColor="#FFFFFF"
             android:textStyle="bold" />
@@ -99,7 +99,7 @@
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_marginTop="10dp"
-            android:backgroundTint="#7F8C8D"
+            android:backgroundTint="#A99E9B"
             android:text="재생 중지"
             android:textColor="#FFFFFF"
             android:textStyle="bold" />
@@ -112,7 +112,7 @@
             android:background="@drawable/bg_record_card"
             android:padding="16dp"
             android:text="현재 재생 중인 완화 음원이 없습니다."
-            android:textColor="#34495E"
+            android:textColor="@color/baby_text"
             android:textSize="14sp" />
 
         <TextView
@@ -120,7 +120,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:text="※ 선택한 음원은 기기에 저장된 파일을 사용하며, 자동 재생은 울음 분석이 성공한 뒤 동작합니다."
-            android:textColor="#95A5A6"
+            android:textColor="@color/baby_muted"
             android:textSize="12sp" />
 
     </LinearLayout>
