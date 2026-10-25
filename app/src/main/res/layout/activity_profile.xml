@@ -6,71 +6,207 @@
     android:layout_height="match_parent"
     android:background="@color/baby_bg">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:orientation="vertical"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp"
-        android:paddingTop="28dp"
+        android:fillViewport="true"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:letterSpacing="0.16"
-            android:text="BABY CARE"
-            android:textColor="@color/baby_pink_dark"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="안녕하세요, 보호자님"
-            android:textColor="@color/baby_text"
-            android:textSize="27sp"
-            android:textStyle="bold" />
-
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="88dp"
-                android:layout_height="88dp"
-                android:background="@drawable/bg_baby_soft_pink"
-                android:gravity="center"
-                android:text="✦"
-                android:textColor="@color/baby_pink_dark"
-                android:textSize="34sp" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="28dp"
+            android:paddingBottom="32dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="26dp"
-                android:text="우리 아기 프로필"
-                android:textColor="@color/baby_text"
-                android:textSize="23sp"
+                android:letterSpacing="0.16"
+                android:text="BABY CARE"
+                android:textColor="@color/baby_pink_dark"
+                android:textSize="12sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:layout_width="wrap_content"
+                android:id="@+id/tvProfileGreeting"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:gravity="center"
-                android:text="아기 정보와 보호자 기록을 한곳에서 관리할 수 있어요."
-                android:textColor="@color/baby_muted"
-                android:textSize="14sp" />
+                android:layout_marginTop="8dp"
+                android:text="안녕하세요, 보호자님"
+                android:textColor="@color/baby_text"
+                android:textSize="27sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/profileSummaryContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="50dp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    android:background="@drawable/bg_baby_soft_pink"
+                    android:gravity="center"
+                    android:text="✦"
+                    android:textColor="@color/baby_pink_dark"
+                    android:textSize="34sp" />
+
+                <TextView
+                    android:id="@+id/tvProfileTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="우리 아기 프로필"
+                    android:textColor="@color/baby_text"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvProfileSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="생년월일을 등록해주세요."
+                    android:textColor="@color/baby_muted"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tvProfileDetails"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="28dp"
+                    android:background="@drawable/bg_baby_card"
+                    android:lineSpacingExtra="7dp"
+                    android:padding="20dp"
+                    android:textColor="@color/baby_text"
+                    android:textSize="15sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEditProfile"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="16dp"
+                    android:text="프로필 수정"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    app:backgroundTint="@color/baby_pink"
+                    app:cornerRadius="18dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/profileEditContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/bg_baby_card"
+                android:orientation="vertical"
+                android:padding="20dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="아기 정보"
+                    android:textColor="@color/baby_text"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etBabyName"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="14dp"
+                    android:hint="아기 이름 또는 애칭 *"
+                    android:inputType="textPersonName"
+                    android:maxLines="1" />
+
+                <EditText
+                    android:id="@+id/etBirthDate"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:focusable="false"
+                    android:clickable="true"
+                    android:hint="생년월일 *"
+                    android:inputType="none" />
+
+                <RadioGroup
+                    android:id="@+id/rgGender"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/rbGenderBoy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="남아" />
+
+                    <RadioButton
+                        android:id="@+id/rbGenderGirl"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="18dp"
+                        android:text="여아" />
+                </RadioGroup>
+
+                <EditText
+                    android:id="@+id/etProfileBirthWeight"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:hint="출생체중(g)"
+                    android:inputType="numberDecimal"
+                    android:maxLines="1" />
+
+                <CheckBox
+                    android:id="@+id/cbProfilePreterm"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="미숙아로 출생함" />
+
+                <EditText
+                    android:id="@+id/etGuardianName"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="4dp"
+                    android:hint="보호자 이름 또는 호칭"
+                    android:inputType="textPersonName"
+                    android:maxLines="1" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSaveProfile"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="18dp"
+                    android:text="프로필 저장"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    app:backgroundTint="@color/baby_pink"
+                    app:cornerRadius="18dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCancelProfileEdit"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="8dp"
+                    android:text="취소"
+                    android:textAllCaps="false"
+                    android:textColor="@color/baby_text"
+                    app:backgroundTint="#F3ECE8"
+                    app:cornerRadius="16dp" />
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
+    </ScrollView>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
