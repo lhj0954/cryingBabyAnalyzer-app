@@ -365,20 +365,25 @@ public class MedicalRecordActivity extends AppCompatActivity {
     }
 
     private void applyRecordFilters() {
-        if (spinnerPeriod == null || spinnerLabel == null) {
+        if (spinnerLabel == null) {
             return;
         }
 
         List<CryApiService.CryRecord> filtered = new ArrayList<>();
-        long startTime = getSelectedStartTime();
-        long now = System.currentTimeMillis();
         String selectedLabel = getSelectedRawLabel();
+
+        long startTime = selectedDate.getTimeInMillis();
+        Calendar endCalendar = (Calendar) selectedDate.clone();
+        endCalendar.add(Calendar.DAY_OF_MONTH, 1);
+        long endTime = endCalendar.getTimeInMillis();
 
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA);
 
         for (CryApiService.CryRecord record : allRecords) {
             Date created = parseDate(format, record.created_at);
-            if (created == null || created.getTime() < startTime || created.getTime() > now) {
+            if (created == null
+                    || created.getTime() < startTime
+                    || created.getTime() >= endTime) {
                 continue;
             }
 
@@ -391,36 +396,13 @@ public class MedicalRecordActivity extends AppCompatActivity {
             filtered.add(record);
         }
 
-        tvSummary.setText(buildFilteredClinicalSummary(filtered));
+        tvSummary.setText(
+                buildDailyClinicalSummary(filtered)
+                        + "\n\n"
+                        + buildWeekdaySummary(allRecords)
+        );
+
         showRecords(filtered);
-    }
-
-    private long getSelectedStartTime() {
-        int position = spinnerPeriod.getSelectedItemPosition();
-
-        if (position == 0) {
-            Calendar start = Calendar.getInstance();
-            start.set(Calendar.HOUR_OF_DAY, 0);
-            start.set(Calendar.MINUTE, 0);
-            start.set(Calendar.SECOND, 0);
-            start.set(Calendar.MILLISECOND, 0);
-            return start.getTimeInMillis();
-        }
-
-        int days = position == 2 ? 30 : 7;
-        return System.currentTimeMillis() - (days * 24L * 60L * 60L * 1000L);
-    }
-
-    private int getSelectedPeriodDays() {
-        int position = spinnerPeriod.getSelectedItemPosition();
-        if (position == 0) return 1;
-        if (position == 2) return 30;
-        return 7;
-    }
-
-    private String getSelectedPeriodTitle() {
-        Object item = spinnerPeriod.getSelectedItem();
-        return item != null ? item.toString() : "최근 7일";
     }
 
     private String getSelectedRawLabel() {
@@ -434,14 +416,15 @@ public class MedicalRecordActivity extends AppCompatActivity {
         return null;
     }
 
-    private String buildFilteredClinicalSummary(List<CryApiService.CryRecord> records) {
+    private String buildDailyClinicalSummary(List<CryApiService.CryRecord> records) {
         int total = records != null ? records.size() : 0;
-        int days = getSelectedPeriodDays();
-        String periodTitle = getSelectedPeriodTitle();
+        String selectedDateText = new SimpleDateFormat(
+                "M월 d일",
+                Locale.KOREA
+        ).format(selectedDate.getTime());
 
         if (total == 0) {
-            return periodTitle + " 울음 감지: 0회\n"
-                    + "하루 평균: 0.0회\n"
+            return selectedDateText + " 울음 감지: 0회\n"
                     + "가장 많이 감지된 원인: 없음\n"
                     + "가장 많이 감지된 시간대: 없음\n"
                     + "보호자 피드백 완료: 0회";
@@ -457,7 +440,10 @@ public class MedicalRecordActivity extends AppCompatActivity {
 
         for (CryApiService.CryRecord record : records) {
             if (record.label != null && !record.label.trim().isEmpty()) {
-                labelCounts.put(record.label, labelCounts.getOrDefault(record.label, 0) + 1);
+                labelCounts.put(
+                        record.label,
+                        labelCounts.getOrDefault(record.label, 0) + 1
+                );
             }
 
             if (record.duration_sec != null) {
@@ -473,30 +459,30 @@ public class MedicalRecordActivity extends AppCompatActivity {
             if (created != null) {
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTime(created);
-                int hour = calendar.get(Calendar.HOUR_OF_DAY);
-
-                if (hour < 6) {
-                    timeBuckets[0]++;
-                } else if (hour < 12) {
-                    timeBuckets[1]++;
-                } else if (hour < 18) {
-                    timeBuckets[2]++;
-                } else {
-                    timeBuckets[3]++;
-                }
+                timeBuckets[getTimeBucketIndex(
+                        calendar.get(Calendar.HOUR_OF_DAY)
+                )]++;
             }
         }
 
         String topLabel = "없음";
         int topLabelCount = 0;
+
         for (Map.Entry<String, Integer> entry : labelCounts.entrySet()) {
             if (entry.getValue() > topLabelCount) {
                 topLabelCount = entry.getValue();
-                topLabel = convertLabelToKorean(entry.getKey()) + " (" + entry.getValue() + "회)";
+                topLabel = convertLabelToKorean(entry.getKey())
+                        + " (" + entry.getValue() + "회)";
             }
         }
 
-        String[] bucketLabels = {"00~06시", "06~12시", "12~18시", "18~24시"};
+        String[] bucketLabels = {
+                "새벽 00~06시",
+                "오전 06~12시",
+                "낮 12~18시",
+                "저녁 18~24시"
+        };
+
         int topBucketIndex = 0;
         for (int i = 1; i < timeBuckets.length; i++) {
             if (timeBuckets[i] > timeBuckets[topBucketIndex]) {
@@ -505,16 +491,79 @@ public class MedicalRecordActivity extends AppCompatActivity {
         }
 
         String averageDuration = durationCount > 0
-                ? String.format(Locale.KOREA, "%.1f초", durationSum / durationCount)
+                ? String.format(
+                        Locale.KOREA,
+                        "%.1f초",
+                        durationSum / durationCount
+                )
                 : "없음";
 
-        return periodTitle + " 울음 감지: " + total + "회\n"
-                + String.format(Locale.KOREA, "하루 평균: %.1f회\n", total / (double) days)
+        return selectedDateText + " 울음 감지: " + total + "회\n"
                 + "가장 많이 감지된 원인: " + topLabel + "\n"
-                + "가장 많이 감지된 시간대: " + bucketLabels[topBucketIndex]
+                + "가장 많이 감지된 시간대: "
+                + bucketLabels[topBucketIndex]
                 + " (" + timeBuckets[topBucketIndex] + "회)\n"
                 + "평균 기록 길이: " + averageDuration + "\n"
                 + "보호자 피드백 완료: " + feedbackCount + "회";
+    }
+
+    private String buildWeekdaySummary(List<CryApiService.CryRecord> records) {
+        int[] counts = new int[7];
+
+        Calendar sevenDaysAgo = Calendar.getInstance();
+        sevenDaysAgo.add(Calendar.DAY_OF_MONTH, -6);
+        normalizeCalendar(sevenDaysAgo);
+
+        long start = sevenDaysAgo.getTimeInMillis();
+        long end = System.currentTimeMillis();
+
+        SimpleDateFormat format = new SimpleDateFormat(
+                "yyyy-MM-dd HH:mm:ss",
+                Locale.KOREA
+        );
+
+        if (records != null) {
+            for (CryApiService.CryRecord record : records) {
+                Date created = parseDate(format, record.created_at);
+                if (created == null
+                        || created.getTime() < start
+                        || created.getTime() > end) {
+                    continue;
+                }
+
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(created);
+
+                int day = calendar.get(Calendar.DAY_OF_WEEK);
+                int index;
+
+                if (day == Calendar.MONDAY) index = 0;
+                else if (day == Calendar.TUESDAY) index = 1;
+                else if (day == Calendar.WEDNESDAY) index = 2;
+                else if (day == Calendar.THURSDAY) index = 3;
+                else if (day == Calendar.FRIDAY) index = 4;
+                else if (day == Calendar.SATURDAY) index = 5;
+                else index = 6;
+
+                counts[index]++;
+            }
+        }
+
+        return "최근 7일 요일별 횟수\n"
+                + "월 " + counts[0] + " · "
+                + "화 " + counts[1] + " · "
+                + "수 " + counts[2] + " · "
+                + "목 " + counts[3] + " · "
+                + "금 " + counts[4] + " · "
+                + "토 " + counts[5] + " · "
+                + "일 " + counts[6];
+    }
+
+    private int getTimeBucketIndex(int hour) {
+        if (hour < 6) return 0;
+        if (hour < 12) return 1;
+        if (hour < 18) return 2;
+        return 3;
     }
 
     private String buildClinicalSummary(List<CryApiService.CryRecord> records) {
