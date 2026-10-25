@@ -560,7 +560,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
     private void updateSelectedDateUi() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 M월 d일 (E)", Locale.KOREA);
         String prefix = isTodaySelected() ? "오늘 · " : "";
-        tvSelectedDate.setText(prefix + dateFormat.format(selectedDate.getTime()));
+        tvSelectedDate.setText("📅  " + prefix + dateFormat.format(selectedDate.getTime()));
         btnNextDate.setEnabled(!isTodaySelected());
         btnNextDate.setAlpha(isTodaySelected() ? 0.35f : 1f);
     }
