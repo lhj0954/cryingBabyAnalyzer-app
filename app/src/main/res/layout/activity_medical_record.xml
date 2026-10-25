@@ -120,11 +120,13 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnPrevDate"
-                    android:layout_width="48dp"
+                    android:layout_width="72dp"
                     android:layout_height="48dp"
-                    android:text="‹"
+                    android:text="← 이전"
+                    android:textAllCaps="false"
                     android:textColor="@color/baby_pink_dark"
-                    android:textSize="26sp"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
                     app:backgroundTint="@color/baby_pink_soft"
                     app:cornerRadius="18dp" />
 
@@ -146,19 +148,31 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnNextDate"
-                    android:layout_width="48dp"
+                    android:layout_width="72dp"
                     android:layout_height="48dp"
-                    android:text="›"
+                    android:text="다음 →"
+                    android:textAllCaps="false"
                     android:textColor="@color/baby_pink_dark"
-                    android:textSize="26sp"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
                     app:backgroundTint="@color/baby_pink_soft"
                     app:cornerRadius="18dp" />
             </LinearLayout>
 
             <TextView
+                android:id="@+id/tvSpecialDateIndicator"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="7dp"
+                android:gravity="center"
+                android:text="✓ 특이사항이 기록된 날짜는 체크로 표시돼요."
+                android:textColor="@color/baby_muted"
+                android:textSize="11sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
                 android:gravity="center"
                 android:text="날짜를 누르면 달력에서 바로 선택할 수 있고, 좌우로 밀어 하루씩 이동할 수 있어요."
                 android:textColor="@color/baby_muted"
