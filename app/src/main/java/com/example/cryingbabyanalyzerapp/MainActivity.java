@@ -54,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvRecentMeta;
     private TextView tvTodayCount;
     private TextView tvTopCause;
+    private TextView tvMonitorState;
     private Switch switchBackground;
     private BottomNavigationView bottomNavigationView;
     private CircularProgressIndicator detectionProgress;
@@ -120,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
         tvRecentMeta = findViewById(R.id.tvRecentMeta);
         tvTodayCount = findViewById(R.id.tvTodayCount);
         tvTopCause = findViewById(R.id.tvTopCause);
+        tvMonitorState = findViewById(R.id.tvMonitorState);
         switchBackground = findViewById(R.id.switchBackground);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
         detectionProgress = findViewById(R.id.detectionProgress);
@@ -199,6 +201,8 @@ public class MainActivity extends AppCompatActivity {
         );
 
         switchBackground.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            updateMonitorState(isChecked);
+
             if (!hasRequiredPermissions()) {
                 requestAudioPermission();
                 switchBackground.setChecked(false);
@@ -524,9 +528,12 @@ public class MainActivity extends AppCompatActivity {
         if (CryDetectionService.isRunning) {
             switchBackground.setOnCheckedChangeListener(null);
             switchBackground.setChecked(true);
+            updateMonitorState(true);
             txtStatus.setText("백그라운드 상시 감지 작동 중...");
 
             switchBackground.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                updateMonitorState(isChecked);
+
                 if (!hasRequiredPermissions()) {
                     requestAudioPermission();
                     switchBackground.setChecked(false);
@@ -545,6 +552,8 @@ public class MainActivity extends AppCompatActivity {
                     stopBackgroundService();
                 }
             });
+        } else {
+            updateMonitorState(false);
         }
     }
 
@@ -555,6 +564,18 @@ public class MainActivity extends AppCompatActivity {
             unregisterReceiver(resultReceiver);
         } catch (IllegalArgumentException e) {
             // 무시
+        }
+    }
+
+    private void updateMonitorState(boolean enabled) {
+        if (tvMonitorState == null) return;
+
+        if (enabled) {
+            tvMonitorState.setText("● 현재 감시 중");
+            tvMonitorState.setTextColor(ContextCompat.getColor(this, R.color.baby_pink_dark));
+        } else {
+            tvMonitorState.setText("현재 꺼짐");
+            tvMonitorState.setTextColor(ContextCompat.getColor(this, R.color.baby_muted));
         }
     }
 
@@ -665,11 +686,13 @@ public class MainActivity extends AppCompatActivity {
             startService(serviceIntent);
         }
         txtStatus.setText("백그라운드 상시 감지 ON");
+        updateMonitorState(true);
     }
 
     private void stopBackgroundService() {
         Intent serviceIntent = new Intent(this, CryDetectionService.class);
         stopService(serviceIntent);
         txtStatus.setText("백그라운드 상시 감지 OFF");
+        updateMonitorState(false);
     }
 }
