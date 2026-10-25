@@ -45,6 +45,9 @@
         <activity android:name=".FeedbackActivity" />
         <activity android:name=".MedicalRecordActivity" />
         <activity
+            android:name=".ProfileActivity"
+            android:exported="false" />
+        <activity
             android:name=".SoothingSettingsActivity"
             android:exported="false" />
 
