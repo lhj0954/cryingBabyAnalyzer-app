@@ -668,17 +668,80 @@ public class MedicalRecordActivity extends AppCompatActivity {
     private void showRecords(List<CryApiService.CryRecord> records) {
         recordListContainer.removeAllViews();
 
-        if (records == null || records.isEmpty()) {
-            tvEmpty.setVisibility(View.VISIBLE);
-            tvEmpty.setText("아직 저장된 울음 기록이 없습니다.\n울음 분석을 실행하면 자동으로 기록됩니다.");
+        List<List<CryApiService.CryRecord>> buckets = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            buckets.add(new ArrayList<>());
+        }
+
+        SimpleDateFormat format = new SimpleDateFormat(
+                "yyyy-MM-dd HH:mm:ss",
+                Locale.KOREA
+        );
+
+        if (records != null) {
+            for (CryApiService.CryRecord record : records) {
+                Date created = parseDate(format, record.created_at);
+                if (created == null) continue;
+
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(created);
+                int bucket = getTimeBucketIndex(
+                        calendar.get(Calendar.HOUR_OF_DAY)
+                );
+
+                buckets.get(bucket).add(record);
+            }
+        }
+
+        int total = records != null ? records.size() : 0;
+        tvEmpty.setVisibility(total == 0 ? View.VISIBLE : View.GONE);
+
+        if (total == 0) {
+            tvEmpty.setText(
+                    "선택한 날짜에 저장된 울음 기록이 없습니다.\n"
+                            + "좌우로 날짜를 이동하거나 새 울음 분석을 실행해보세요."
+            );
+        }
+
+        addTimeSection("새벽 · 00:00 ~ 06:00", buckets.get(0));
+        addTimeSection("오전 · 06:00 ~ 12:00", buckets.get(1));
+        addTimeSection("낮 · 12:00 ~ 18:00", buckets.get(2));
+        addTimeSection("저녁 · 18:00 ~ 24:00", buckets.get(3));
+    }
+
+    private void addTimeSection(
+            String title,
+            List<CryApiService.CryRecord> records
+    ) {
+        TextView header = new TextView(this);
+        header.setText(title + "  ·  " + records.size() + "회");
+        header.setTextSize(15);
+        header.setTextColor(0xFFD96B7E);
+        header.setTypeface(null, android.graphics.Typeface.BOLD);
+        header.setPadding(20, 16, 20, 16);
+        header.setBackgroundResource(R.drawable.bg_baby_soft_pink);
+
+        LinearLayout.LayoutParams headerParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        headerParams.setMargins(0, 18, 0, 10);
+        header.setLayoutParams(headerParams);
+
+        recordListContainer.addView(header);
+
+        if (records.isEmpty()) {
+            TextView empty = new TextView(this);
+            empty.setText("이 시간대에는 울음 기록이 없어요.");
+            empty.setTextColor(0xFF8D8481);
+            empty.setTextSize(13);
+            empty.setPadding(12, 8, 12, 10);
+            recordListContainer.addView(empty);
             return;
         }
 
-        tvEmpty.setVisibility(View.GONE);
-
-        int displayCount = Math.min(records.size(), 20);
-        for (int i = 0; i < displayCount; i++) {
-            recordListContainer.addView(createRecordView(records.get(i)));
+        for (CryApiService.CryRecord record : records) {
+            recordListContainer.addView(createRecordView(record));
         }
     }
 
@@ -691,17 +754,17 @@ public class MedicalRecordActivity extends AppCompatActivity {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        cardParams.setMargins(0, 0, 0, 20);
+        cardParams.setMargins(0, 0, 0, 16);
         card.setLayoutParams(cardParams);
         card.setBackgroundResource(R.drawable.bg_record_card);
 
         TextView tvDate = new TextView(this);
-        tvDate.setText(record.created_at != null ? record.created_at : "날짜 정보 없음");
+        tvDate.setText(formatRecordTime(record.created_at));
         tvDate.setTextSize(14);
         tvDate.setTextColor(0xFF7F8C8D);
 
         TextView tvLabel = new TextView(this);
-        tvLabel.setText(convertLabelToKorean(record.label));
+        tvLabel.setText(buildRecordTitle(record));
         tvLabel.setTextSize(19);
         tvLabel.setTextColor(0xFF2C3E50);
         tvLabel.setTypeface(null, android.graphics.Typeface.BOLD);
@@ -715,6 +778,29 @@ public class MedicalRecordActivity extends AppCompatActivity {
         card.addView(tvDate);
         card.addView(tvLabel);
         card.addView(tvDetail);
+
+        File audioFile = record.audio_path != null
+                ? new File(record.audio_path)
+                : null;
+
+        if (audioFile != null && audioFile.exists()) {
+            Button playbackButton = new Button(this);
+            playbackButton.setText("▶ 녹음 재생");
+            playbackButton.setAllCaps(false);
+
+            LinearLayout.LayoutParams playbackParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            playbackParams.setMargins(0, 12, 0, 0);
+            playbackButton.setLayoutParams(playbackParams);
+
+            playbackButton.setOnClickListener(
+                    v -> playRecordAudio(record, playbackButton)
+            );
+
+            card.addView(playbackButton);
+        }
 
         if (record.feedback_correct != null) {
             TextView tvFeedback = new TextView(this);
@@ -732,7 +818,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
             );
-            feedbackParams.setMargins(0, 12, 0, 0);
+            feedbackParams.setMargins(0, 10, 0, 0);
             feedbackButton.setLayoutParams(feedbackParams);
 
             feedbackButton.setOnClickListener(v -> {
@@ -743,7 +829,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
                 intent.putExtra("RECORD_ID", record.id);
                 intent.putExtra(
                         "RESULT_TEXT",
-                        "분석 원인: " + convertLabelToKorean(record.label)
+                        buildRecordResultText(record)
                 );
                 startActivity(intent);
             });
@@ -754,18 +840,177 @@ public class MedicalRecordActivity extends AppCompatActivity {
         return card;
     }
 
+    private String buildRecordTitle(CryApiService.CryRecord record) {
+        boolean showTopTwo = record.confidence != null
+                && record.confidence < CryPredictionUtils.LOW_CONFIDENCE_THRESHOLD
+                && record.secondary_label != null
+                && record.secondary_confidence != null;
+
+        if (showTopTwo) {
+            return convertLabelToKorean(record.label)
+                    + " / "
+                    + convertLabelToKorean(record.secondary_label);
+        }
+
+        return convertLabelToKorean(record.label);
+    }
+
+    private String buildRecordResultText(CryApiService.CryRecord record) {
+        if (record.confidence != null
+                && record.confidence < CryPredictionUtils.LOW_CONFIDENCE_THRESHOLD
+                && record.secondary_label != null
+                && record.secondary_confidence != null) {
+
+            return String.format(
+                    Locale.KOREA,
+                    "1순위: %s %.0f%%\n2순위: %s %.0f%%",
+                    convertLabelToKorean(record.label),
+                    record.confidence * 100f,
+                    convertLabelToKorean(record.secondary_label),
+                    record.secondary_confidence * 100f
+            );
+        }
+
+        return "분석 원인: " + convertLabelToKorean(record.label);
+    }
+
     private String buildDetailText(CryApiService.CryRecord record) {
         String confidenceText = "신뢰도: 없음";
+
         if (record.confidence != null) {
-            confidenceText = String.format(Locale.KOREA, "신뢰도: %.1f%%", record.confidence * 100f);
+            confidenceText = String.format(
+                    Locale.KOREA,
+                    "1순위 신뢰도: %.1f%%",
+                    record.confidence * 100f
+            );
+        }
+
+        if (record.confidence != null
+                && record.confidence < CryPredictionUtils.LOW_CONFIDENCE_THRESHOLD
+                && record.secondary_label != null
+                && record.secondary_confidence != null) {
+
+            confidenceText += String.format(
+                    Locale.KOREA,
+                    " · 2순위 %s %.1f%%",
+                    convertLabelToKorean(record.secondary_label),
+                    record.secondary_confidence * 100f
+            );
         }
 
         String durationText = "기록 길이: 없음";
         if (record.duration_sec != null) {
-            durationText = String.format(Locale.KOREA, "기록 길이: %.1f초", record.duration_sec);
+            durationText = String.format(
+                    Locale.KOREA,
+                    "기록 길이: %.1f초",
+                    record.duration_sec
+            );
         }
 
-        return confidenceText + " · " + durationText;
+        return confidenceText + "\n" + durationText;
+    }
+
+    private String formatRecordTime(String createdAt) {
+        if (createdAt == null || createdAt.trim().isEmpty()) {
+            return "시간 정보 없음";
+        }
+
+        SimpleDateFormat input = new SimpleDateFormat(
+                "yyyy-MM-dd HH:mm:ss",
+                Locale.KOREA
+        );
+        SimpleDateFormat output = new SimpleDateFormat(
+                "a h:mm",
+                Locale.KOREA
+        );
+
+        Date date = parseDate(input, createdAt);
+        return date != null ? output.format(date) : createdAt;
+    }
+
+    private void playRecordAudio(
+            CryApiService.CryRecord record,
+            Button button
+    ) {
+        if (record.audio_path == null || record.audio_path.trim().isEmpty()) {
+            Toast.makeText(
+                    this,
+                    "저장된 녹음 파일을 찾을 수 없습니다.",
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
+        File file = new File(record.audio_path);
+        if (!file.exists()) {
+            Toast.makeText(
+                    this,
+                    "녹음 파일이 기기에서 삭제되었거나 이동되었습니다.",
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
+        if (activePlayer != null && activePlaybackButton == button) {
+            releaseActivePlayer();
+            return;
+        }
+
+        releaseActivePlayer();
+
+        try {
+            MediaPlayer player = new MediaPlayer();
+            player.setDataSource(file.getAbsolutePath());
+            player.prepare();
+
+            activePlayer = player;
+            activePlaybackButton = button;
+            button.setText("■ 재생 중지");
+
+            player.setOnCompletionListener(mp -> releaseActivePlayer());
+            player.setOnErrorListener((mp, what, extra) -> {
+                releaseActivePlayer();
+                Toast.makeText(
+                        MedicalRecordActivity.this,
+                        "녹음 파일을 재생하지 못했습니다.",
+                        Toast.LENGTH_SHORT
+                ).show();
+                return true;
+            });
+
+            player.start();
+
+        } catch (Exception e) {
+            releaseActivePlayer();
+            Toast.makeText(
+                    this,
+                    "녹음 파일을 재생하지 못했습니다.",
+                    Toast.LENGTH_SHORT
+            ).show();
+        }
+    }
+
+    private void releaseActivePlayer() {
+        if (activePlayer != null) {
+            try {
+                if (activePlayer.isPlaying()) {
+                    activePlayer.stop();
+                }
+            } catch (Exception ignored) {
+            }
+
+            try {
+                activePlayer.release();
+            } catch (Exception ignored) {
+            }
+
+            activePlayer = null;
+        }
+
+        if (activePlaybackButton != null) {
+            activePlaybackButton.setText("▶ 녹음 재생");
+            activePlaybackButton = null;
+        }
     }
 
     private String buildFeedbackText(CryApiService.CryRecord record) {
@@ -1097,6 +1342,12 @@ public class MedicalRecordActivity extends AppCompatActivity {
         if (lower.contains("sleepy")) return "졸림";
 
         return input;
+    }
+
+    @Override
+    protected void onDestroy() {
+        releaseActivePlayer();
+        super.onDestroy();
     }
 
     private static class SpecialNote {
