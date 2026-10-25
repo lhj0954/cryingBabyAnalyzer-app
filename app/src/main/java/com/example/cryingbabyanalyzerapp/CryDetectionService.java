@@ -179,7 +179,7 @@ public class CryDetectionService extends Service {
                         .setContentText(
                                 "백그라운드에서 소리를 상시 감지하고 있습니다."
                         )
-                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setSmallIcon(R.drawable.ic_stat_baby_cry)
                         .setOngoing(true)
                         .setForegroundServiceBehavior(
                                 NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE
