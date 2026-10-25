@@ -3,6 +3,7 @@ package com.example.cryingbabyanalyzerapp;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -17,11 +18,13 @@ public class FeedbackActivity extends AppCompatActivity {
     private RadioGroup rgCorrect;
     private RadioGroup rgReason;
     private EditText etAction;
+    private LinearLayout actionSection;
     private Button btnSubmit;
     private Button btnClose;
 
     private LocalCryRecordStore localRecordStore;
     private int recordId = -1;
+    private String currentRecordLabel = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,12 +35,20 @@ public class FeedbackActivity extends AppCompatActivity {
         rgCorrect = findViewById(R.id.rgCorrect);
         rgReason = findViewById(R.id.rgReason);
         etAction = findViewById(R.id.etAction);
+        actionSection = findViewById(R.id.actionSection);
         btnSubmit = findViewById(R.id.btnSubmit);
         btnClose = findViewById(R.id.btnClose);
 
         localRecordStore = new LocalCryRecordStore(this);
 
         recordId = getIntent().getIntExtra("RECORD_ID", -1);
+
+        if (recordId > 0) {
+            CryApiService.CryRecord record = localRecordStore.getRecord(recordId);
+            if (record != null && record.label != null) {
+                currentRecordLabel = record.label;
+            }
+        }
 
         String resultText = getIntent().getStringExtra("RESULT_TEXT");
         if (resultText != null && !resultText.isEmpty()) {
@@ -53,7 +64,15 @@ public class FeedbackActivity extends AppCompatActivity {
                 setReasonGroupEnabled(false);
                 rgReason.clearCheck();
             }
+
+            updateActionSectionVisibility();
         });
+
+        rgReason.setOnCheckedChangeListener(
+                (group, checkedId) -> updateActionSectionVisibility()
+        );
+
+        updateActionSectionVisibility();
 
         btnClose.setOnClickListener(v -> finish());
         btnSubmit.setOnClickListener(v -> submitFeedback());
@@ -125,6 +144,32 @@ public class FeedbackActivity extends AppCompatActivity {
                 }
             });
         });
+    }
+
+    private void updateActionSectionVisibility() {
+        boolean show = false;
+        int correctId = rgCorrect.getCheckedRadioButtonId();
+
+        if (correctId == R.id.rbYes) {
+            show = isDiscomfortLabel(currentRecordLabel);
+        } else if (correctId == R.id.rbNo) {
+            show = isDiscomfortLabel(getSelectedReason());
+        }
+
+        actionSection.setVisibility(show ? android.view.View.VISIBLE : android.view.View.GONE);
+
+        if (!show) {
+            etAction.setText("");
+        }
+    }
+
+    private boolean isDiscomfortLabel(String label) {
+        if (label == null) return false;
+
+        String lower = label.toLowerCase();
+        return lower.contains("uncomfortable")
+                || lower.contains("discomfort")
+                || lower.contains("belly_pain");
     }
 
     private String getSelectedReason() {
