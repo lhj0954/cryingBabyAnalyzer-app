@@ -127,8 +127,8 @@
                     android:insetRight="0dp"
                     android:insetBottom="0dp"
                     android:text="←"
-                    android:textColor="@color/baby_pink_dark"
-                    android:textSize="22sp"
+                    android:textColor="@color/baby_text"
+                    android:textSize="24sp"
                     android:textStyle="bold"
                     app:backgroundTint="@color/baby_pink_soft"
                     app:cornerRadius="18dp" />
@@ -158,8 +158,8 @@
                     android:insetRight="0dp"
                     android:insetBottom="0dp"
                     android:text="→"
-                    android:textColor="@color/baby_pink_dark"
-                    android:textSize="22sp"
+                    android:textColor="@color/baby_text"
+                    android:textSize="24sp"
                     android:textStyle="bold"
                     app:backgroundTint="@color/baby_pink_soft"
                     app:cornerRadius="18dp" />
