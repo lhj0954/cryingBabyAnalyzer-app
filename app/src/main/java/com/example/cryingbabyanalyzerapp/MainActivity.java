@@ -256,6 +256,7 @@ public class MainActivity extends AppCompatActivity {
         // YAMNet 시작 실패 시 감지 효과도 시작하지 않습니다.
         if (!yamnetMonitor.isRunning()) {
             detectMode = false;
+            btnDetect.setText("◉  울음 분석 시작하기");
             stopDetectionChargingEffect();
             return;
         }
@@ -455,7 +456,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             if (allGranted) {
-                txtStatus.setText("앱을 사용하려면 마이크 및 알림 권한이 필요합니다.");
+                txtStatus.setText("편안한 상태예요");
             } else {
                 txtStatus.setText("앱을 사용하려면 마이크, 알림, 플래시 권한이 필요합니다.");
             }
@@ -593,13 +594,7 @@ public class MainActivity extends AppCompatActivity {
         for (Map.Entry<String, Integer> entry : labelCounts.entrySet()) {
             if (entry.getValue() > topCount) {
                 topCount = entry.getValue();
-                topLabel = convertLabelToKorean(entry.getKey())
-                        .replace("아기가 ", "")
-                        .replace("을 느끼고 있어요.", "")
-                        .replace("를 확인해주세요.", "")
-                        .replace("라고 보채고 있어요.", "")
-                        .replace("해요.", "")
-                        .replace("요.", "");
+                topLabel = convertLabelShort(entry.getKey());
             }
         }
         tvTopCause.setText(topLabel);
@@ -616,6 +611,20 @@ public class MainActivity extends AppCompatActivity {
         }
         tvRecentMeta.setText(meta);
         btnFeedback.setVisibility(View.VISIBLE);
+    }
+
+    private String convertLabelShort(String input) {
+        if (input == null || input.isEmpty()) return "없음";
+
+        String lower = input.toLowerCase(Locale.US);
+        if (lower.contains("uncomfortable")) return "불편함";
+        if (lower.contains("awake")) return "깸";
+        if (lower.contains("diaper")) return "기저귀";
+        if (lower.contains("hug")) return "안아달람";
+        if (lower.contains("hungry")) return "배고픔";
+        if (lower.contains("sleepy")) return "졸림";
+
+        return input;
     }
 
     private Date parseRecordDate(SimpleDateFormat format, String value) {
