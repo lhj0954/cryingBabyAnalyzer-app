@@ -2,8 +2,10 @@ package com.example.cryingbabyanalyzerapp;
 
 import android.Manifest;
 import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
@@ -41,6 +43,18 @@ public class AlertActivity extends AppCompatActivity {
 
     private Runnable flashRunnable;
 
+    private final BroadcastReceiver screenOffReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
+                stopAlertEffects();
+                finish();
+            }
+        }
+    };
+
+    private boolean screenOffReceiverRegistered = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,6 +66,8 @@ public class AlertActivity extends AppCompatActivity {
         );
 
         setContentView(R.layout.activity_alert);
+
+        registerScreenOffReceiver();
 
         txtAlertCause = findViewById(R.id.txtAlertCause);
         btnOpenFeedback = findViewById(R.id.btnOpenFeedback);
@@ -182,6 +198,36 @@ public class AlertActivity extends AppCompatActivity {
         }
 
         return input;
+    }
+
+    private void registerScreenOffReceiver() {
+        if (screenOffReceiverRegistered) {
+            return;
+        }
+
+        IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+
+        ContextCompat.registerReceiver(
+                this,
+                screenOffReceiver,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
+
+        screenOffReceiverRegistered = true;
+    }
+
+    private void unregisterScreenOffReceiver() {
+        if (!screenOffReceiverRegistered) {
+            return;
+        }
+
+        try {
+            unregisterReceiver(screenOffReceiver);
+        } catch (IllegalArgumentException ignored) {
+        }
+
+        screenOffReceiverRegistered = false;
     }
 
     private void startVibration() {
@@ -330,6 +376,7 @@ public class AlertActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        unregisterScreenOffReceiver();
         stopAlertEffects();
         super.onDestroy();
     }
