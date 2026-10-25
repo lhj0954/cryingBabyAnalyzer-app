@@ -1,21 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="@color/baby_bg">
+
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="28dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:letterSpacing="0.16"
+            android:text="BABY CARE"
+            android:textColor="@color/baby_pink_dark"
+            android:textSize="12sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="진료용 문진 요약"
-            android:textColor="#2C3E50"
+            android:text="분석 기록"
+            android:textColor="@color/baby_text"
             android:textSize="26sp"
             android:textStyle="bold" />
 
@@ -24,15 +48,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="최근 울음 기록과 보호자 특이사항을 한 화면에서 정리합니다."
-            android:textColor="#7F8C8D"
+            android:text="아기의 울음 패턴과 상태 변화를 한눈에 볼 수 있어요."
+            android:textColor="@color/baby_muted"
             android:textSize="14sp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:background="#FFF5F6"
+            android:background="@drawable/bg_baby_soft_pink"
             android:padding="12dp"
             android:text="※ 본 화면은 진료 참고용 기록이며 의료적 진단을 의미하지 않습니다."
             android:textColor="#B04A56"
@@ -43,7 +67,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:text="울음 패턴 요약"
-            android:textColor="#2C3E50"
+            android:textColor="@color/baby_text"
             android:textSize="19sp"
             android:textStyle="bold" />
 
@@ -56,7 +80,7 @@
             android:lineSpacingExtra="4dp"
             android:padding="18dp"
             android:text="최근 7일 울음 감지: 0회"
-            android:textColor="#2C3E50"
+            android:textColor="@color/baby_text"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -65,7 +89,7 @@
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="12dp"
-            android:backgroundTint="#FF7A85"
+            android:backgroundTint="@color/baby_pink"
             android:text="울음 기록 새로고침"
             android:textColor="#FFFFFF"
             android:textStyle="bold" />
@@ -75,7 +99,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
             android:text="조회 조건"
-            android:textColor="#2C3E50"
+            android:textColor="@color/baby_text"
             android:textSize="17sp"
             android:textStyle="bold" />
 
@@ -91,7 +115,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="기간"
-                android:textColor="#34495E"
+                android:textColor="@color/baby_text"
                 android:textStyle="bold" />
 
             <Spinner
@@ -104,7 +128,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="울음 원인"
-                android:textColor="#34495E"
+                android:textColor="@color/baby_text"
                 android:textStyle="bold" />
 
             <Spinner
@@ -118,7 +142,7 @@
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_marginTop="24dp"
-            android:backgroundTint="#5B8DEF"
+            android:backgroundTint="@color/baby_pink_dark"
             android:text="특이사항 메모 작성 ▼"
             android:textColor="#FFFFFF"
             android:textStyle="bold" />
@@ -137,7 +161,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="기본 정보"
-                android:textColor="#2C3E50"
+                android:textColor="@color/baby_text"
                 android:textSize="17sp"
                 android:textStyle="bold" />
 
@@ -169,7 +193,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
                 android:text="수유 · 수면 · 배변"
-                android:textColor="#2C3E50"
+                android:textColor="@color/baby_text"
                 android:textSize="17sp"
                 android:textStyle="bold" />
 
@@ -178,7 +202,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="수유 형태"
-                android:textColor="#34495E"
+                android:textColor="@color/baby_text"
                 android:textStyle="bold" />
 
             <RadioGroup
@@ -255,7 +279,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
                 android:text="최근 동반 증상"
-                android:textColor="#2C3E50"
+                android:textColor="@color/baby_text"
                 android:textSize="17sp"
                 android:textStyle="bold" />
 
@@ -306,7 +330,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
                 android:text="보호자 메모"
-                android:textColor="#2C3E50"
+                android:textColor="@color/baby_text"
                 android:textSize="17sp"
                 android:textStyle="bold" />
 
@@ -326,7 +350,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginTop="14dp"
-                android:backgroundTint="#FF7A85"
+                android:backgroundTint="@color/baby_pink"
                 android:text="특이사항 저장"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold" />
@@ -337,7 +361,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:text="저장한 특이사항은 이 기기의 목록에 누적됩니다."
-                android:textColor="#7F8C8D"
+                android:textColor="@color/baby_muted"
                 android:textSize="12sp" />
         </LinearLayout>
 
@@ -346,7 +370,7 @@
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_marginTop="12dp"
-            android:backgroundTint="#7F8C8D"
+            android:backgroundTint="#A99E9B"
             android:text="특이사항 목록 (0) ▼"
             android:textColor="#FFFFFF"
             android:textStyle="bold" />
@@ -364,7 +388,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="26dp"
             android:text="최근 울음 기록"
-            android:textColor="#2C3E50"
+            android:textColor="@color/baby_text"
             android:textSize="19sp"
             android:textStyle="bold" />
 
@@ -391,4 +415,19 @@
             android:layout_height="24dp" />
 
     </LinearLayout>
-</ScrollView>
+    </ScrollView>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="0dp"
+        android:layout_height="76dp"
+        android:background="@android:color/white"
+        app:itemIconTint="@color/bnv_item_color"
+        app:itemTextColor="@color/bnv_item_color"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav_menu"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
