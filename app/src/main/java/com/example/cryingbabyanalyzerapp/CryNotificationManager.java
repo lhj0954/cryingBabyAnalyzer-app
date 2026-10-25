@@ -149,14 +149,25 @@ public class CryNotificationManager {
         );
 
         // 3. 알림 디자인 및 설정
+        NotificationCompat.WearableExtender wearableExtender =
+                new NotificationCompat.WearableExtender()
+                        // 휴대폰과 Wear OS 워치에서 알림을 닫을 때 상태를 동기화합니다.
+                        .setDismissalId("baby_cry_alert");
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("🚨 아기 울음 감지!")
+                .setContentTitle("아기 울음 감지")
                 .setContentText(contentText)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(contentText))
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setVibrate(new long[]{0, 500, 200, 500, 200, 700})
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                // false이면 페어링된 Wear OS 워치로 시스템이 알림을 브리징할 수 있습니다.
+                .setLocalOnly(false)
+                .extend(wearableExtender)
+                // Wear OS는 full-screen intent를 사용하지 않고 알림 카드로 표시합니다.
                 .setFullScreenIntent(pendingIntent, true)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
