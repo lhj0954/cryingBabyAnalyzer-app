@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvTodayCount;
     private TextView tvTopCause;
     private TextView tvMonitorState;
+    private TextView tvViewAllRecords;
     private Switch switchBackground;
     private BottomNavigationView bottomNavigationView;
     private CircularProgressIndicator detectionProgress;
@@ -123,6 +124,7 @@ public class MainActivity extends AppCompatActivity {
         tvTodayCount = findViewById(R.id.tvTodayCount);
         tvTopCause = findViewById(R.id.tvTopCause);
         tvMonitorState = findViewById(R.id.tvMonitorState);
+        tvViewAllRecords = findViewById(R.id.tvViewAllRecords);
         switchBackground = findViewById(R.id.switchBackground);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
         detectionProgress = findViewById(R.id.detectionProgress);
@@ -199,6 +201,10 @@ public class MainActivity extends AppCompatActivity {
 
         btnProfileQuick.setOnClickListener(v ->
                 startActivity(new Intent(MainActivity.this, ProfileActivity.class))
+        );
+
+        tvViewAllRecords.setOnClickListener(v ->
+                startActivity(new Intent(MainActivity.this, MedicalRecordActivity.class))
         );
 
         switchBackground.setOnCheckedChangeListener((buttonView, isChecked) -> {
