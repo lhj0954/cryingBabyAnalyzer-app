@@ -21,6 +21,7 @@ public class CryDetectionService extends Service {
 
     private YamnetMonitor yamnetMonitor;
     private CryApiService apiService;
+    private LocalCryRecordStore localRecordStore;
     private CryNotificationManager notificationManager;
     private PowerManager.WakeLock wakeLock;
 
@@ -77,6 +78,7 @@ public class CryDetectionService extends Service {
          * 서버 API
          */
         apiService = new CryApiService(BuildConfig.SERVER_IP);
+        localRecordStore = new LocalCryRecordStore(this);
 
         /*
          * 알림 관리자
@@ -281,13 +283,22 @@ public class CryDetectionService extends Service {
 
                                     /*
                                      * =================================================
-                                     * 3. 분석 결과 저장
+                                     * 3. 분석 결과를 태블릿 로컬 DB에 저장
                                      * =================================================
                                      */
                                     lastResultText = label;
-                                    lastRecordId = (response != null && response.record_id != null)
-                                            ? response.record_id
-                                            : -1;
+
+                                    try {
+                                        lastRecordId = localRecordStore.insertRecord(
+                                                wavFile,
+                                                label,
+                                                confidence,
+                                                response != null ? response.duration_sec : 5f,
+                                                response != null ? response.message : null
+                                        );
+                                    } catch (Exception e) {
+                                        lastRecordId = -1;
+                                    }
 
 
                                     /*
