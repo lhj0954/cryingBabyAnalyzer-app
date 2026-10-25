@@ -168,8 +168,33 @@ public class MedicalRecordActivity extends AppCompatActivity {
 
     private void toggleSpecialNoteForm() {
         boolean willShow = specialNoteFormContainer.getVisibility() != View.VISIBLE;
+
+        if (willShow) {
+            applyProfileDefaultsToSpecialNoteForm();
+        }
+
         specialNoteFormContainer.setVisibility(willShow ? View.VISIBLE : View.GONE);
         btnToggleSpecialNoteForm.setText(willShow ? "특이사항 메모 작성 ▲" : "특이사항 메모 작성 ▼");
+    }
+
+    private void applyProfileDefaultsToSpecialNoteForm() {
+        if (!BabyProfilePreferences.hasProfile(this)) {
+            return;
+        }
+
+        int ageMonths = BabyProfilePreferences.getAgeMonths(this);
+        if (ageMonths >= 0 && etAgeMonths.getText().toString().trim().isEmpty()) {
+            etAgeMonths.setText(String.valueOf(ageMonths));
+        }
+
+        String birthWeight = BabyProfilePreferences.getBirthWeight(this);
+        if (!birthWeight.isEmpty() && etBirthWeight.getText().toString().trim().isEmpty()) {
+            etBirthWeight.setText(birthWeight);
+        }
+
+        if (BabyProfilePreferences.isPreterm(this)) {
+            cbPreterm.setChecked(true);
+        }
     }
 
     private void toggleSpecialNoteList() {
