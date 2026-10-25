@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnProfileQuick;
     private TextView txtStatus;
     private TextView txtResult;
+    private TextView tvHomeGreeting;
     private TextView tvRecentMeta;
     private TextView tvTodayCount;
     private TextView tvTopCause;
@@ -114,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
         btnProfileQuick = findViewById(R.id.btnProfileQuick);
         txtStatus = findViewById(R.id.txtStatus);
         txtResult = findViewById(R.id.txtResult);
+        tvHomeGreeting = findViewById(R.id.tvHomeGreeting);
         tvRecentMeta = findViewById(R.id.tvRecentMeta);
         tvTodayCount = findViewById(R.id.tvTodayCount);
         tvTopCause = findViewById(R.id.tvTopCause);
@@ -495,6 +497,7 @@ public class MainActivity extends AppCompatActivity {
         );
 
         updateResultUI();
+        updateProfileGreeting();
         loadHomeSummary();
 
         if (CryDetectionService.isRunning) {
@@ -532,6 +535,11 @@ public class MainActivity extends AppCompatActivity {
         } catch (IllegalArgumentException e) {
             // 무시
         }
+    }
+
+    private void updateProfileGreeting() {
+        if (tvHomeGreeting == null) return;
+        tvHomeGreeting.setText(BabyProfilePreferences.getHomeGreeting(this));
     }
 
     private void loadHomeSummary() {
