@@ -27,7 +27,14 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 
 import java.io.File;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
@@ -40,8 +47,12 @@ public class MainActivity extends AppCompatActivity {
     private Button btnDetect;
     private Button btnFeedback;
     private Button btnSoothingSettings;
+    private Button btnProfileQuick;
     private TextView txtStatus;
     private TextView txtResult;
+    private TextView tvRecentMeta;
+    private TextView tvTodayCount;
+    private TextView tvTopCause;
     private Switch switchBackground;
     private BottomNavigationView bottomNavigationView;
     private CircularProgressIndicator detectionProgress;
@@ -100,8 +111,12 @@ public class MainActivity extends AppCompatActivity {
         btnDetect = findViewById(R.id.btnDetect);
         btnFeedback = findViewById(R.id.btnFeedback);
         btnSoothingSettings = findViewById(R.id.btnSoothingSettings);
+        btnProfileQuick = findViewById(R.id.btnProfileQuick);
         txtStatus = findViewById(R.id.txtStatus);
         txtResult = findViewById(R.id.txtResult);
+        tvRecentMeta = findViewById(R.id.tvRecentMeta);
+        tvTodayCount = findViewById(R.id.tvTodayCount);
+        tvTopCause = findViewById(R.id.tvTopCause);
         switchBackground = findViewById(R.id.switchBackground);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
         detectionProgress = findViewById(R.id.detectionProgress);
@@ -175,6 +190,10 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(MainActivity.this, SoothingSettingsActivity.class))
         );
 
+        btnProfileQuick.setOnClickListener(v ->
+                startActivity(new Intent(MainActivity.this, ProfileActivity.class))
+        );
+
         switchBackground.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (!hasRequiredPermissions()) {
                 requestAudioPermission();
@@ -213,6 +232,11 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
 
+            if (itemId == R.id.nav_profile) {
+                startActivity(new Intent(MainActivity.this, ProfileActivity.class));
+                return true;
+            }
+
             return false;
         });
     }
@@ -225,6 +249,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         detectMode = true;
+        btnDetect.setText("분석 중지");
 
         yamnetMonitor.start();
 
@@ -276,7 +301,8 @@ public class MainActivity extends AppCompatActivity {
             detectionTimer = null;
         }
 
-        txtStatus.setText("마이크 버튼을 눌러보세요!");
+        btnDetect.setText("◉  울음 분석 시작하기");
+        txtStatus.setText("편안한 상태예요");
         yamnetMonitor.stop();
         stopDetectionChargingEffect();
     }
@@ -330,6 +356,13 @@ public class MainActivity extends AppCompatActivity {
                                     : -1;
 
                             txtResult.setText(convertLabelToKorean(label));
+                            tvRecentMeta.setText(
+                                    String.format(
+                                            Locale.KOREA,
+                                            "방금 분석 · 신뢰도 %.0f%%",
+                                            confidence * 100f
+                                    )
+                            );
                             btnFeedback.setVisibility(View.VISIBLE);
 
                             if (response != null && response.prediction != null) {
@@ -461,6 +494,7 @@ public class MainActivity extends AppCompatActivity {
         );
 
         updateResultUI();
+        loadHomeSummary();
 
         if (CryDetectionService.isRunning) {
             switchBackground.setOnCheckedChangeListener(null);
@@ -498,6 +532,101 @@ public class MainActivity extends AppCompatActivity {
             // 무시
         }
     }
+
+    private void loadHomeSummary() {
+        if (apiService == null) return;
+
+        apiService.getRecords(new CryApiService.RecordsCallback() {
+            @Override
+            public void onSuccess(List<CryApiService.CryRecord> records) {
+                runOnUiThread(() -> applyHomeSummary(records));
+            }
+
+            @Override
+            public void onFailure(String message) {
+                runOnUiThread(() -> {
+                    if (tvTodayCount != null) tvTodayCount.setText("0회");
+                    if (tvTopCause != null) tvTopCause.setText("없음");
+                });
+            }
+        });
+    }
+
+    private void applyHomeSummary(List<CryApiService.CryRecord> records) {
+        if (records == null || records.isEmpty()) {
+            tvTodayCount.setText("0회");
+            tvTopCause.setText("없음");
+            if (currentRecordId <= 0) {
+                txtResult.setText("아직 분석 기록이 없어요");
+                tvRecentMeta.setText("울음을 분석하면 이곳에 최근 결과가 표시됩니다.");
+            }
+            return;
+        }
+
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA);
+        Calendar start = Calendar.getInstance();
+        start.set(Calendar.HOUR_OF_DAY, 0);
+        start.set(Calendar.MINUTE, 0);
+        start.set(Calendar.SECOND, 0);
+        start.set(Calendar.MILLISECOND, 0);
+
+        int todayCount = 0;
+        Map<String, Integer> labelCounts = new HashMap<>();
+
+        for (CryApiService.CryRecord record : records) {
+            Date created = parseRecordDate(format, record.created_at);
+            if (created != null && created.getTime() >= start.getTimeInMillis()) {
+                todayCount++;
+                if (record.label != null && !record.label.trim().isEmpty()) {
+                    labelCounts.put(
+                            record.label,
+                            labelCounts.getOrDefault(record.label, 0) + 1
+                    );
+                }
+            }
+        }
+
+        tvTodayCount.setText(todayCount + "회");
+
+        String topLabel = "없음";
+        int topCount = 0;
+        for (Map.Entry<String, Integer> entry : labelCounts.entrySet()) {
+            if (entry.getValue() > topCount) {
+                topCount = entry.getValue();
+                topLabel = convertLabelToKorean(entry.getKey())
+                        .replace("아기가 ", "")
+                        .replace("을 느끼고 있어요.", "")
+                        .replace("를 확인해주세요.", "")
+                        .replace("라고 보채고 있어요.", "")
+                        .replace("해요.", "")
+                        .replace("요.", "");
+            }
+        }
+        tvTopCause.setText(topLabel);
+
+        CryApiService.CryRecord recent = records.get(0);
+        if (currentRecordId <= 0) {
+            txtResult.setText(convertLabelToKorean(recent.label));
+            currentRecordId = recent.id;
+        }
+
+        String meta = recent.created_at != null ? recent.created_at : "최근 분석";
+        if (recent.confidence != null) {
+            meta += String.format(Locale.KOREA, " · 신뢰도 %.0f%%", recent.confidence * 100f);
+        }
+        tvRecentMeta.setText(meta);
+        btnFeedback.setVisibility(View.VISIBLE);
+    }
+
+    private Date parseRecordDate(SimpleDateFormat format, String value) {
+        if (value == null || value.trim().isEmpty()) return null;
+        try {
+            return format.parse(value);
+        } catch (ParseException e) {
+            return null;
+        }
+    }
+
 
     private void startBackgroundService() {
         Intent serviceIntent = new Intent(this, CryDetectionService.class);
