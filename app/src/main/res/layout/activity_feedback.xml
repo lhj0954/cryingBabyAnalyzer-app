@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F7F9FC"
+    android:background="@color/baby_bg"
     android:padding="24dp">
 
     <LinearLayout
@@ -32,7 +32,7 @@
                 android:layout_height="48dp"
                 android:backgroundTint="#E9EDF3"
                 android:text="✕"
-                android:textColor="#2C3E50"
+                android:textColor="@color/baby_text"
                 android:textSize="18sp" />
         </LinearLayout>
 
@@ -42,10 +42,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="24dp"
-            android:background="#E8F0FE"
+            android:background="@drawable/bg_baby_soft_pink"
             android:padding="16dp"
             android:text="분석 결과: 대기 중"
-            android:textColor="#1565C0"
+            android:textColor="@color/baby_pink_dark"
             android:textSize="18sp"
             android:textStyle="bold" />
 
