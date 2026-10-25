@@ -65,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
 
     private YamnetMonitor yamnetMonitor;
     private CryApiService apiService;
+    private LocalCryRecordStore localRecordStore;
     private CryNotificationManager notificationManager;
 
     private boolean detectMode = false;
@@ -127,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
         viewRipple2 = findViewById(R.id.viewRipple2);
 
         apiService = new CryApiService(BuildConfig.SERVER_IP);
+        localRecordStore = new LocalCryRecordStore(this);
         notificationManager = new CryNotificationManager(this);
 
         setupBottomNavigation();
@@ -342,37 +344,56 @@ public class MainActivity extends AppCompatActivity {
                 apiService.predict(wavFile, new CryApiService.PredictCallback() {
                     @Override
                     public void onSuccess(final CryApiService.PredictResponse response) {
+                        String label = "없음";
+                        float confidence = 0f;
+
+                        if (response != null && response.prediction != null) {
+                            label = response.prediction.label;
+                            confidence = response.prediction.confidence;
+                        }
+
+                        int savedRecordId = -1;
+                        try {
+                            savedRecordId = localRecordStore.insertRecord(
+                                    wavFile,
+                                    label,
+                                    confidence,
+                                    response != null ? response.duration_sec : 5f,
+                                    response != null ? response.message : null
+                            );
+                        } catch (Exception ignored) {
+                        }
+
+                        final String finalLabel = label;
+                        final float finalConfidence = confidence;
+                        final int finalRecordId = savedRecordId;
+
                         txtStatus.post(() -> {
-                            // 서버 분석 성공 시 감지 모드를 자동으로 끕니다. (이펙트 스톱 및 상태 초기화)
+                            // 서버는 분석만 담당하고, 기록은 태블릿 로컬 DB에 저장합니다.
                             stopDetectMode();
 
-                            String label = "없음";
-                            float confidence = 0f;
+                            currentRecordId = finalRecordId;
 
-                            if (response != null && response.prediction != null) {
-                                label = response.prediction.label;
-                                confidence = response.prediction.confidence;
-                            }
-
-                            currentRecordId = (response != null && response.record_id != null)
-                                    ? response.record_id
-                                    : -1;
-
-                            txtResult.setText(convertLabelToKorean(label));
+                            txtResult.setText(convertLabelToKorean(finalLabel));
                             tvRecentMeta.setText(
                                     String.format(
                                             Locale.KOREA,
                                             "방금 분석 · 신뢰도 %.0f%%",
-                                            confidence * 100f
+                                            finalConfidence * 100f
                                     )
                             );
-                            btnFeedback.setVisibility(View.VISIBLE);
+
+                            btnFeedback.setVisibility(
+                                    currentRecordId > 0 ? View.VISIBLE : View.GONE
+                            );
+
+                            loadHomeSummary();
 
                             if (response != null && response.prediction != null) {
                                 SoothingAudioManager.playIfAutoEnabled(MainActivity.this);
                                 notificationManager.sendCryNotification(
-                                        label,
-                                        confidence,
+                                        finalLabel,
+                                        finalConfidence,
                                         currentRecordId
                                 );
                             }
@@ -543,21 +564,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadHomeSummary() {
-        if (apiService == null) return;
+        if (localRecordStore == null) return;
 
-        apiService.getRecords(new CryApiService.RecordsCallback() {
-            @Override
-            public void onSuccess(List<CryApiService.CryRecord> records) {
-                runOnUiThread(() -> applyHomeSummary(records));
-            }
+        Executors.newSingleThreadExecutor().execute(() -> {
+            List<CryApiService.CryRecord> records = localRecordStore.listRecords();
 
-            @Override
-            public void onFailure(String message) {
-                runOnUiThread(() -> {
-                    if (tvTodayCount != null) tvTodayCount.setText("0회");
-                    if (tvTopCause != null) tvTopCause.setText("없음");
-                });
-            }
+            runOnUiThread(() -> applyHomeSummary(records));
         });
     }
 
