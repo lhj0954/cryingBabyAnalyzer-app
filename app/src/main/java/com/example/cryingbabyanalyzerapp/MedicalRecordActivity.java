@@ -1,5 +1,6 @@
 package com.example.cryingbabyanalyzerapp;
 
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.MediaPlayer;
@@ -270,6 +271,8 @@ public class MedicalRecordActivity extends AppCompatActivity {
         btnPrevDate.setOnClickListener(v -> animateDateChange(-1));
         btnNextDate.setOnClickListener(v -> animateDateChange(1));
 
+        tvSelectedDate.setOnClickListener(v -> showDatePicker());
+
         dateNavigationCard.setOnTouchListener((v, event) -> {
             if (dateTransitionRunning) {
                 return true;
@@ -331,6 +334,107 @@ public class MedicalRecordActivity extends AppCompatActivity {
 
             return true;
         });
+    }
+
+    private void showDatePicker() {
+        DatePickerDialog dialog = new DatePickerDialog(
+                this,
+                (view, year, month, dayOfMonth) -> {
+                    Calendar pickedDate = Calendar.getInstance();
+                    pickedDate.set(year, month, dayOfMonth);
+                    normalizeCalendar(pickedDate);
+
+                    if (pickedDate.getTimeInMillis() == selectedDate.getTimeInMillis()) {
+                        return;
+                    }
+
+                    animateToSelectedDate(pickedDate);
+                },
+                selectedDate.get(Calendar.YEAR),
+                selectedDate.get(Calendar.MONTH),
+                selectedDate.get(Calendar.DAY_OF_MONTH)
+        );
+
+        // 기록은 오늘까지 존재하므로 미래 날짜 선택은 막습니다.
+        dialog.getDatePicker().setMaxDate(System.currentTimeMillis());
+        dialog.setTitle("기록을 볼 날짜 선택");
+        dialog.show();
+    }
+
+    private void animateToSelectedDate(Calendar targetDate) {
+        if (dateTransitionRunning) {
+            return;
+        }
+
+        normalizeCalendar(targetDate);
+
+        Calendar today = Calendar.getInstance();
+        normalizeCalendar(today);
+
+        if (targetDate.after(today)) {
+            targetDate.setTimeInMillis(today.getTimeInMillis());
+        }
+
+        if (targetDate.getTimeInMillis() == selectedDate.getTimeInMillis()) {
+            return;
+        }
+
+        dateTransitionRunning = true;
+        releaseActivePlayer();
+
+        boolean movingToPast = targetDate.before(selectedDate);
+
+        float width = Math.max(
+                dateNavigationCard.getWidth(),
+                getResources().getDisplayMetrics().widthPixels * 0.82f
+        );
+
+        float outX = movingToPast ? width : -width;
+        float inX = -outX;
+
+        tvSummary.animate()
+                .translationX(outX)
+                .alpha(0.12f)
+                .setDuration(150L)
+                .start();
+
+        recordListContainer.animate()
+                .translationX(outX)
+                .alpha(0.12f)
+                .setDuration(150L)
+                .start();
+
+        dateNavigationCard.animate()
+                .translationX(outX)
+                .alpha(0.12f)
+                .setDuration(150L)
+                .withEndAction(() -> {
+                    selectedDate.setTimeInMillis(targetDate.getTimeInMillis());
+                    updateSelectedDateUi();
+                    applyRecordFilters();
+
+                    setDatePageTransform(inX, 0.12f);
+
+                    tvSummary.animate()
+                            .translationX(0f)
+                            .alpha(1f)
+                            .setDuration(230L)
+                            .start();
+
+                    recordListContainer.animate()
+                            .translationX(0f)
+                            .alpha(1f)
+                            .setDuration(230L)
+                            .start();
+
+                    dateNavigationCard.animate()
+                            .translationX(0f)
+                            .alpha(1f)
+                            .setDuration(230L)
+                            .withEndAction(() -> dateTransitionRunning = false)
+                            .start();
+                })
+                .start();
     }
 
     private void animateDateChange(int days) {
