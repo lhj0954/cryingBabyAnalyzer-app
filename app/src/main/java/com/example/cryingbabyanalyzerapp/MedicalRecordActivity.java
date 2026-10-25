@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -49,6 +50,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
     private Button btnSaveSpecialNote;
     private Spinner spinnerPeriod;
     private Spinner spinnerLabel;
+    private BottomNavigationView bottomNavigationView;
 
     private List<CryApiService.CryRecord> allRecords = new ArrayList<>();
 
@@ -90,6 +92,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
         migrateOldQuestionnaireIfNeeded();
         refreshSpecialNoteList();
         setupRecordFilters();
+        setupBottomNavigation();
 
         btnRefresh.setOnClickListener(v -> loadRecords());
         btnToggleSpecialNoteForm.setOnClickListener(v -> toggleSpecialNoteForm());
@@ -112,6 +115,7 @@ public class MedicalRecordActivity extends AppCompatActivity {
         btnSaveSpecialNote = findViewById(R.id.btnSaveSpecialNote);
         spinnerPeriod = findViewById(R.id.spinnerPeriod);
         spinnerLabel = findViewById(R.id.spinnerLabel);
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
 
         etAgeMonths = findViewById(R.id.etAgeMonths);
         etBirthWeight = findViewById(R.id.etBirthWeight);
@@ -135,6 +139,33 @@ public class MedicalRecordActivity extends AppCompatActivity {
         cbConstipationOrBlood = findViewById(R.id.cbConstipationOrBlood);
     }
 
+    private void setupBottomNavigation() {
+        if (bottomNavigationView == null) return;
+
+        bottomNavigationView.setSelectedItemId(R.id.nav_medical_record);
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.nav_medical_record) {
+                return true;
+            }
+
+            if (itemId == R.id.nav_home) {
+                startActivity(new Intent(MedicalRecordActivity.this, MainActivity.class));
+                finish();
+                return true;
+            }
+
+            if (itemId == R.id.nav_profile) {
+                startActivity(new Intent(MedicalRecordActivity.this, ProfileActivity.class));
+                finish();
+                return true;
+            }
+
+            return false;
+        });
+    }
+
     private void toggleSpecialNoteForm() {
         boolean willShow = specialNoteFormContainer.getVisibility() != View.VISIBLE;
         specialNoteFormContainer.setVisibility(willShow ? View.VISIBLE : View.GONE);
@@ -150,6 +181,9 @@ public class MedicalRecordActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setSelectedItemId(R.id.nav_medical_record);
+        }
         if (apiService != null) {
             loadRecords();
         }
