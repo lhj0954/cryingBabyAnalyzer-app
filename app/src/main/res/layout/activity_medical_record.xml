@@ -131,12 +131,17 @@
                 <TextView
                     android:id="@+id/tvSelectedDate"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:layout_weight="1"
+                    android:background="@drawable/bg_baby_soft_pink"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center"
-                    android:text="오늘"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:text="📅  오늘"
                     android:textColor="@color/baby_text"
-                    android:textSize="18sp"
+                    android:textSize="17sp"
                     android:textStyle="bold" />
 
                 <com.google.android.material.button.MaterialButton
@@ -155,7 +160,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:gravity="center"
-                android:text="좌우로 밀어서 날짜를 이동할 수도 있어요."
+                android:text="날짜를 누르면 달력에서 바로 선택할 수 있고, 좌우로 밀어 하루씩 이동할 수 있어요."
                 android:textColor="@color/baby_muted"
                 android:textSize="11sp" />
 
