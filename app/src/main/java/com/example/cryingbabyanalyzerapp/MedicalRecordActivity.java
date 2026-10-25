@@ -63,8 +63,6 @@ public class MedicalRecordActivity extends AppCompatActivity {
 
     private List<CryApiService.CryRecord> allRecords = new ArrayList<>();
 
-    private EditText etAgeMonths;
-    private EditText etBirthWeight;
     private EditText etFeedsPerDay;
     private EditText etWetDiapers;
     private EditText etStoolCount;
@@ -73,7 +71,6 @@ public class MedicalRecordActivity extends AppCompatActivity {
 
     private RadioGroup rgFeedingType;
 
-    private CheckBox cbPreterm;
     private CheckBox cbFeedingDecrease;
     private CheckBox cbHardToSoothe;
     private CheckBox cbFever;
@@ -137,8 +134,6 @@ public class MedicalRecordActivity extends AppCompatActivity {
         dateNavigationCard = findViewById(R.id.dateNavigationCard);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-        etAgeMonths = findViewById(R.id.etAgeMonths);
-        etBirthWeight = findViewById(R.id.etBirthWeight);
         etFeedsPerDay = findViewById(R.id.etFeedsPerDay);
         etWetDiapers = findViewById(R.id.etWetDiapers);
         etStoolCount = findViewById(R.id.etStoolCount);
@@ -147,7 +142,6 @@ public class MedicalRecordActivity extends AppCompatActivity {
 
         rgFeedingType = findViewById(R.id.rgFeedingType);
 
-        cbPreterm = findViewById(R.id.cbPreterm);
         cbFeedingDecrease = findViewById(R.id.cbFeedingDecrease);
         cbHardToSoothe = findViewById(R.id.cbHardToSoothe);
         cbFever = findViewById(R.id.cbFever);
@@ -189,32 +183,8 @@ public class MedicalRecordActivity extends AppCompatActivity {
     private void toggleSpecialNoteForm() {
         boolean willShow = specialNoteFormContainer.getVisibility() != View.VISIBLE;
 
-        if (willShow) {
-            applyProfileDefaultsToSpecialNoteForm();
-        }
-
         specialNoteFormContainer.setVisibility(willShow ? View.VISIBLE : View.GONE);
         btnToggleSpecialNoteForm.setText(willShow ? "특이사항 메모 작성 ▲" : "특이사항 메모 작성 ▼");
-    }
-
-    private void applyProfileDefaultsToSpecialNoteForm() {
-        if (!BabyProfilePreferences.hasProfile(this)) {
-            return;
-        }
-
-        int ageMonths = BabyProfilePreferences.getAgeMonths(this);
-        if (ageMonths >= 0 && etAgeMonths.getText().toString().trim().isEmpty()) {
-            etAgeMonths.setText(String.valueOf(ageMonths));
-        }
-
-        String birthWeight = BabyProfilePreferences.getBirthWeight(this);
-        if (!birthWeight.isEmpty() && etBirthWeight.getText().toString().trim().isEmpty()) {
-            etBirthWeight.setText(birthWeight);
-        }
-
-        if (BabyProfilePreferences.isPreterm(this)) {
-            cbPreterm.setChecked(true);
-        }
     }
 
     private void toggleSpecialNoteList() {
@@ -1386,8 +1356,6 @@ public class MedicalRecordActivity extends AppCompatActivity {
         noteTime.set(Calendar.MILLISECOND, now.get(Calendar.MILLISECOND));
 
         note.savedAt = noteTime.getTimeInMillis();
-        note.ageMonths = etAgeMonths.getText().toString().trim();
-        note.birthWeight = etBirthWeight.getText().toString().trim();
         note.feedsPerDay = etFeedsPerDay.getText().toString().trim();
         note.wetDiapers = etWetDiapers.getText().toString().trim();
         note.stoolCount = etStoolCount.getText().toString().trim();
@@ -1405,7 +1373,6 @@ public class MedicalRecordActivity extends AppCompatActivity {
             note.feedingType = "";
         }
 
-        note.preterm = cbPreterm.isChecked();
         note.feedingDecrease = cbFeedingDecrease.isChecked();
         note.hardToSoothe = cbHardToSoothe.isChecked();
         note.fever = cbFever.isChecked();
@@ -1524,11 +1491,10 @@ public class MedicalRecordActivity extends AppCompatActivity {
 
     private String buildSpecialNoteSummary(SpecialNote note) {
         StringBuilder observations = new StringBuilder();
-        appendCheckedItem(observations, note.preterm, "미숙아 출생");
         appendCheckedItem(observations, note.feedingDecrease, "수유량/횟수 감소");
         appendCheckedItem(observations, note.hardToSoothe, "평소보다 달래기 어려움");
         if (observations.length() == 0) {
-            observations.append("체크된 특이사항 없음");
+            observations.append("체크된 변화 없음");
         }
 
         StringBuilder symptoms = new StringBuilder();
@@ -1543,8 +1509,6 @@ public class MedicalRecordActivity extends AppCompatActivity {
             symptoms.append("체크된 동반 증상 없음");
         }
 
-        String age = valueOrDash(note.ageMonths);
-        String birthWeight = valueOrDash(note.birthWeight);
         String feeding = valueOrDash(note.feedingType);
         String feeds = valueOrDash(note.feedsPerDay);
         String sleep = valueOrDash(note.sleepHours);
@@ -1552,11 +1516,8 @@ public class MedicalRecordActivity extends AppCompatActivity {
         String stool = valueOrDash(note.stoolCount);
         String memo = valueOrDash(note.caregiverMemo);
 
-        return "[기본 정보]\n"
-                + "생후 개월 수: " + age + "\n"
-                + "출생체중: " + (birthWeight.equals("-") ? "-" : birthWeight + " g") + "\n"
-                + "특이사항: " + observations + "\n\n"
-                + "[수유 · 수면 · 배변]\n"
+        return "[수유 · 수면 · 배변]\n"
+                + "최근 변화: " + observations + "\n"
                 + "수유 형태: " + feeding + "\n"
                 + "하루 수유 횟수: " + feeds + "\n"
                 + "하루 수면시간: " + (sleep.equals("-") ? "-" : sleep + "시간") + "\n"
@@ -1569,8 +1530,6 @@ public class MedicalRecordActivity extends AppCompatActivity {
     }
 
     private void clearSpecialNoteForm() {
-        etAgeMonths.setText("");
-        etBirthWeight.setText("");
         etFeedsPerDay.setText("");
         etWetDiapers.setText("");
         etStoolCount.setText("");
@@ -1579,7 +1538,6 @@ public class MedicalRecordActivity extends AppCompatActivity {
 
         rgFeedingType.clearCheck();
 
-        cbPreterm.setChecked(false);
         cbFeedingDecrease.setChecked(false);
         cbHardToSoothe.setChecked(false);
         cbFever.setChecked(false);
