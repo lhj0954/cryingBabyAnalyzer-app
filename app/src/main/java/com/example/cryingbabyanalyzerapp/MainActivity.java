@@ -418,6 +418,8 @@ public class MainActivity extends AppCompatActivity {
                                 notificationManager.sendCryNotification(
                                         finalLabel,
                                         finalConfidence,
+                                        finalSecondaryLabel,
+                                        finalSecondaryConfidence,
                                         currentRecordId
                                 );
                             }
