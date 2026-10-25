@@ -288,11 +288,31 @@ public class CryDetectionService extends Service {
                                      */
                                     lastResultText = label;
 
+                                    String secondaryLabel = null;
+                                    Float secondaryConfidence = null;
+
+                                    if (response != null
+                                            && response.prediction != null
+                                            && response.prediction.scores != null) {
+
+                                        secondaryLabel = CryPredictionUtils.getSecondBestLabel(
+                                                response.prediction.scores,
+                                                label
+                                        );
+
+                                        secondaryConfidence = CryPredictionUtils.getScore(
+                                                response.prediction.scores,
+                                                secondaryLabel
+                                        );
+                                    }
+
                                     try {
                                         lastRecordId = localRecordStore.insertRecord(
                                                 wavFile,
                                                 label,
                                                 confidence,
+                                                secondaryLabel,
+                                                secondaryConfidence,
                                                 response != null ? response.duration_sec : 5f,
                                                 response != null ? response.message : null
                                         );
