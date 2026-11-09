@@ -140,7 +140,7 @@ public class ProfileActivity extends AppCompatActivity {
         StringBuilder details = new StringBuilder();
         details.append("성별  ").append(gender.isEmpty() ? "미입력" : gender).append("\n");
         details.append("출생체중  ")
-                .append(birthWeight.isEmpty() ? "미입력" : birthWeight + " g")
+                .append(birthWeight.isEmpty() ? "미입력" : birthWeight + " kg")
                 .append("\n");
         details.append("미숙아 여부  ").append(preterm ? "예" : "아니오").append("\n");
         details.append("보호자  ").append(guardianName.isEmpty() ? "미입력" : guardianName);
