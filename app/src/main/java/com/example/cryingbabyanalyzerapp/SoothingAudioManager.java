@@ -1,6 +1,7 @@
 package com.example.cryingbabyanalyzerapp;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
@@ -10,6 +11,9 @@ import android.os.Looper;
 
 public final class SoothingAudioManager {
 
+    public static final String ACTION_PLAYBACK_STATE_CHANGED =
+            "com.example.cryingbabyanalyzerapp.SOOTHING_PLAYBACK_STATE_CHANGED";
+
     private static final String PREFS_NAME = "soothing_settings";
     private static final String KEY_AUTO_PLAY = "auto_play";
     private static final String KEY_AUDIO_URI = "audio_uri";
@@ -18,6 +22,7 @@ public final class SoothingAudioManager {
 
     private static final int DEFAULT_DURATION_SECONDS = 60;
 
+    private static Context appContext;
     private static MediaPlayer mediaPlayer;
     private static final Handler handler = new Handler(Looper.getMainLooper());
     private static Runnable stopRunnable;
@@ -86,10 +91,10 @@ public final class SoothingAudioManager {
             return false;
         }
 
+        appContext = context.getApplicationContext();
         stop();
 
         try {
-            Context appContext = context.getApplicationContext();
 
             MediaPlayer player = new MediaPlayer();
             player.setAudioAttributes(
@@ -108,6 +113,7 @@ public final class SoothingAudioManager {
             mediaPlayer = player;
             player.prepare();
             player.start();
+            notifyPlaybackStateChanged();
 
             int durationSeconds = getDurationSeconds(appContext);
             stopRunnable = SoothingAudioManager::stop;
@@ -121,6 +127,7 @@ public final class SoothingAudioManager {
     }
 
     public static synchronized void stop() {
+        boolean hadPlayer = mediaPlayer != null;
         if (stopRunnable != null) {
             handler.removeCallbacks(stopRunnable);
             stopRunnable = null;
@@ -146,6 +153,16 @@ public final class SoothingAudioManager {
 
             mediaPlayer = null;
         }
+        if (hadPlayer) {
+            notifyPlaybackStateChanged();
+        }
+    }
+
+    private static void notifyPlaybackStateChanged() {
+        if (appContext == null) return;
+        Intent intent = new Intent(ACTION_PLAYBACK_STATE_CHANGED);
+        intent.setPackage(appContext.getPackageName());
+        appContext.sendBroadcast(intent);
     }
 
     public static synchronized boolean isPlaying() {

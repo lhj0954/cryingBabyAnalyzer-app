@@ -3,6 +3,8 @@ package com.example.cryingbabyanalyzerapp;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import java.math.BigDecimal;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -17,6 +19,7 @@ public final class BabyProfilePreferences {
     private static final String KEY_BIRTH_DATE = "birth_date";
     private static final String KEY_GENDER = "gender";
     private static final String KEY_BIRTH_WEIGHT = "birth_weight";
+    private static final String KEY_BIRTH_WEIGHT_UNIT = "birth_weight_unit";
     private static final String KEY_PRETERM = "preterm";
     private static final String KEY_GUARDIAN_NAME = "guardian_name";
     private static final String KEY_SAVED_AT = "saved_at";
@@ -46,6 +49,7 @@ public final class BabyProfilePreferences {
                 .putString(KEY_BIRTH_DATE, safe(birthDate))
                 .putString(KEY_GENDER, safe(gender))
                 .putString(KEY_BIRTH_WEIGHT, safe(birthWeight))
+                .putString(KEY_BIRTH_WEIGHT_UNIT, "kg")
                 .putBoolean(KEY_PRETERM, preterm)
                 .putString(KEY_GUARDIAN_NAME, safe(guardianName))
                 .putLong(KEY_SAVED_AT, System.currentTimeMillis())
@@ -65,7 +69,22 @@ public final class BabyProfilePreferences {
     }
 
     public static String getBirthWeight(Context context) {
-        return prefs(context).getString(KEY_BIRTH_WEIGHT, "");
+        SharedPreferences preferences = prefs(context);
+        String weight = preferences.getString(KEY_BIRTH_WEIGHT, "");
+        if (weight == null || weight.trim().isEmpty()) return "";
+
+        // Earlier app versions stored birth weight in grams. Do not simply relabel it.
+        if ("kg".equals(preferences.getString(KEY_BIRTH_WEIGHT_UNIT, ""))) {
+            return weight;
+        }
+        try {
+            return new BigDecimal(weight.trim())
+                    .movePointLeft(3)
+                    .stripTrailingZeros()
+                    .toPlainString();
+        } catch (NumberFormatException e) {
+            return weight;
+        }
     }
 
     public static boolean isPreterm(Context context) {
