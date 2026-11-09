@@ -163,7 +163,7 @@
                     android:id="@+id/etProfileBirthWeight"
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
-                    android:hint="출생체중(g)"
+                    android:hint="출생체중(kg)"
                     android:inputType="numberDecimal"
                     android:maxLines="1" />
 
