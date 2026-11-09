@@ -146,7 +146,7 @@
                     android:paddingEnd="6dp"
                     android:singleLine="true"
                     android:ellipsize="end"
-                    android:text="2026.11.10 (화)"
+                    android:text="날짜 선택"
                     android:textColor="@color/baby_text"
                     android:textSize="15sp"
                     android:textStyle="bold" />
