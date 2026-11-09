@@ -307,6 +307,20 @@
                     app:cornerRadius="18dp" />
             </LinearLayout>
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStopSoothing"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="10dp"
+                android:text="■  울음 완화 오디오 중지"
+                android:textAllCaps="false"
+                android:textColor="@color/baby_pink_dark"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                app:backgroundTint="@color/baby_pink_soft"
+                app:cornerRadius="18dp" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
