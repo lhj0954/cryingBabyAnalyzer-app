@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnDetect;
     private Button btnFeedback;
     private Button btnSoothingSettings;
+    private Button btnStopSoothing;
     private Button btnProfileQuick;
     private TextView txtStatus;
     private TextView txtResult;
@@ -77,8 +78,13 @@ public class MainActivity extends AppCompatActivity {
     private final BroadcastReceiver resultReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            if (intent != null && SoothingAudioManager.ACTION_PLAYBACK_STATE_CHANGED.equals(intent.getAction())) {
+                updateSoothingStopButton();
+                return;
+            }
             updateResultUI();
             loadHomeSummary();
+            updateSoothingStopButton();
         }
     };
 
@@ -116,6 +122,7 @@ public class MainActivity extends AppCompatActivity {
         btnDetect = findViewById(R.id.btnDetect);
         btnFeedback = findViewById(R.id.btnFeedback);
         btnSoothingSettings = findViewById(R.id.btnSoothingSettings);
+        btnStopSoothing = findViewById(R.id.btnStopSoothing);
         btnProfileQuick = findViewById(R.id.btnProfileQuick);
         txtStatus = findViewById(R.id.txtStatus);
         txtResult = findViewById(R.id.txtResult);
@@ -198,6 +205,12 @@ public class MainActivity extends AppCompatActivity {
         btnSoothingSettings.setOnClickListener(v ->
                 startActivity(new Intent(MainActivity.this, SoothingSettingsActivity.class))
         );
+
+        btnStopSoothing.setOnClickListener(v -> {
+            SoothingAudioManager.stop();
+            updateSoothingStopButton();
+            Toast.makeText(this, "울음 완화 오디오가 중지되었습니다.", Toast.LENGTH_SHORT).show();
+        });
 
         btnProfileQuick.setOnClickListener(v ->
                 startActivity(new Intent(MainActivity.this, ProfileActivity.class))
@@ -423,6 +436,7 @@ public class MainActivity extends AppCompatActivity {
                                 // 수동 분석은 화면 결과만 표시합니다.
                                 // 긴급 알림/진동/플래시는 감시모드(CryDetectionService)에서만 동작합니다.
                                 SoothingAudioManager.playIfAutoEnabled(MainActivity.this);
+                                updateSoothingStopButton();
                             }
                         });
                     }
@@ -536,6 +550,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         IntentFilter filter = new IntentFilter("com.example.cryingbabyanalyzerapp.RESULT_UPDATE");
+        filter.addAction(SoothingAudioManager.ACTION_PLAYBACK_STATE_CHANGED);
 
         ContextCompat.registerReceiver(
                 this,
@@ -547,6 +562,7 @@ public class MainActivity extends AppCompatActivity {
         updateResultUI();
         updateProfileGreeting();
         loadHomeSummary();
+        updateSoothingStopButton();
 
         if (CryDetectionService.isRunning) {
             switchBackground.setOnCheckedChangeListener(null);
@@ -600,6 +616,13 @@ public class MainActivity extends AppCompatActivity {
             tvMonitorState.setText("현재 꺼짐");
             tvMonitorState.setTextColor(ContextCompat.getColor(this, R.color.baby_muted));
         }
+    }
+
+    private void updateSoothingStopButton() {
+        if (btnStopSoothing == null) return;
+        btnStopSoothing.setVisibility(
+                SoothingAudioManager.isPlaying() ? View.VISIBLE : View.GONE
+        );
     }
 
     private void updateProfileGreeting() {
