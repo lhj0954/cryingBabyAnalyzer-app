@@ -587,20 +587,14 @@ public class MedicalRecordActivity extends AppCompatActivity {
 
     private void updateSelectedDateUi() {
         SimpleDateFormat dateFormat = new SimpleDateFormat(
-                "yyyy년 M월 d일 (E)",
+                "yyyy.MM.dd (E)",
                 Locale.KOREA
         );
 
-        String prefix = isTodaySelected() ? "오늘 · " : "";
         int specialNoteCount = countSpecialNotesForDate(selectedDate);
         String check = specialNoteCount > 0 ? " ✓" : "";
 
-        tvSelectedDate.setText(
-                "📅  "
-                        + prefix
-                        + dateFormat.format(selectedDate.getTime())
-                        + check
-        );
+        tvSelectedDate.setText(dateFormat.format(selectedDate.getTime()) + check);
 
         if (tvSpecialDateIndicator != null) {
             if (specialNoteCount > 0) {
