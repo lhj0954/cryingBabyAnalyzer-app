@@ -247,7 +247,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="26dp"
-                android:text="지금 아기는"
+                android:text="최근 분석 상태"
                 android:textColor="@color/baby_text"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -281,7 +281,7 @@
                         android:id="@+id/txtStatus"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="편안한 상태예요"
+                        android:text="아직 분석 결과가 없어요"
                         android:textColor="@color/baby_text"
                         android:textSize="16sp"
                         android:textStyle="bold" />
