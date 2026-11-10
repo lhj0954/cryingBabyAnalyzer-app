@@ -108,9 +108,7 @@ public class MainActivity extends AppCompatActivity {
             currentRecordId = CryDetectionService.lastRecordId;
             btnFeedback.setVisibility(View.VISIBLE);
 
-            if (switchBackground.isChecked()) {
-                txtStatus.setText("백그라운드에서 감지됨!");
-            }
+            txtStatus.setText("최근 분석: " + convertLabelToKorean(CryDetectionService.lastResultText));
         }
     }
 
@@ -290,6 +288,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         startDetectionChargingEffect();
+        txtStatus.setText("울음소리 감지 중...");
 
         // 버튼을 누른 순간부터 10초 동안만 수동 감지를 유지합니다.
         detectionTimer = new CountDownTimer(
@@ -331,7 +330,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         btnDetect.setText("◉  울음 분석 시작하기");
-        txtStatus.setText("편안한 상태예요");
         yamnetMonitor.stop();
         stopDetectionChargingEffect();
     }
@@ -520,7 +518,8 @@ public class MainActivity extends AppCompatActivity {
             }
 
             if (allGranted) {
-                txtStatus.setText("편안한 상태예요");
+                // 권한 허용만으로 아기의 현재 상태를 추정하지 않습니다.
+                loadHomeSummary();
             } else {
                 txtStatus.setText("앱을 사용하려면 마이크, 알림, 플래시 권한이 필요합니다.");
             }
@@ -568,7 +567,6 @@ public class MainActivity extends AppCompatActivity {
             switchBackground.setOnCheckedChangeListener(null);
             switchBackground.setChecked(true);
             updateMonitorState(true);
-            txtStatus.setText("백그라운드 상시 감지 작동 중...");
 
             switchBackground.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 updateMonitorState(isChecked);
@@ -741,6 +739,18 @@ public class MainActivity extends AppCompatActivity {
                     )
             );
         }
+
+        // 상태 카드에서도 최근 울음 분석 결과를 동일하게 안내합니다.
+        if (label == null || label.trim().isEmpty() || "없음".equals(label)) {
+            txtStatus.setText("분석 결과를 확인하지 못했어요.");
+        } else if (showTopTwo) {
+            txtStatus.setText(
+                    "최근 분석: " + convertLabelShort(label) + " 또는 "
+                            + convertLabelShort(secondaryLabel) + " 가능성이 있어요."
+            );
+        } else {
+            txtStatus.setText("최근 분석: " + convertLabelToKorean(label));
+        }
     }
 
     private String convertLabelShort(String input) {
@@ -774,14 +784,12 @@ public class MainActivity extends AppCompatActivity {
         } else {
             startService(serviceIntent);
         }
-        txtStatus.setText("백그라운드 상시 감지 ON");
         updateMonitorState(true);
     }
 
     private void stopBackgroundService() {
         Intent serviceIntent = new Intent(this, CryDetectionService.class);
         stopService(serviceIntent);
-        txtStatus.setText("백그라운드 상시 감지 OFF");
         updateMonitorState(false);
     }
 }
